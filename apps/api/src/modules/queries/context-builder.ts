@@ -1,5 +1,5 @@
 import { db } from "../../lib/db";
-import { goals, tasks, actions, contexts, feedback, queries } from "../../lib/schema";
+import { goals, tasks, actions, contexts, feedback, queries, profiles } from "../../lib/schema";
 import { eq, and, desc, lte } from "drizzle-orm";
 import type { FullContext } from "../ai/ai-engine";
 
@@ -44,7 +44,7 @@ export async function buildUserContext(
   manual: ManualContext
 ): Promise<FullContext> {
   // Load everything in parallel
-  const [activeGoals, openTasks, recentActions] = await Promise.all([
+  const [activeGoals, openTasks, recentActions, profileResult] = await Promise.all([
     db
       .select()
       .from(goals)
@@ -68,6 +68,12 @@ export async function buildUserContext(
       .where(eq(queries.userId, userId))
       .orderBy(desc(actions.createdAt))
       .limit(5),
+    
+    db
+      .select({ timezone: profiles.timezone })
+      .from(profiles)
+      .where(eq(profiles.id, userId))
+      .limit(1),
   ]);
 
   // Map goals for fast lookup
@@ -86,16 +92,30 @@ export async function buildUserContext(
     TASK_CAP
   );
 
-  const localTime = new Date().toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const timezone = profileResult[0]?.timezone || "UTC";
+
+  let localTime: string;
+  try {
+    localTime = new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: timezone,
+    });
+  } catch {
+    // Fallback if timezone is invalid
+    localTime = new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "UTC",
+    });
+  }
 
   return {
     userId,
     localTime,
-    timezone: "UTC", // TODO: read from profile
+    timezone,
     minutesAvailable: manual.minutesAvailable,
     energyLevel: manual.energyLevel,
     mood: manual.mood,

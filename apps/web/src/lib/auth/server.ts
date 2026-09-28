@@ -57,10 +57,16 @@ export async function requireUser(): Promise<SessionUser> {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("tier")
+    .eq("id", user.id)
+    .single();
+
   return {
     id: user.id,
     email: user.email!,
-    tier: "free", // TODO: fetch actual tier from profile table
+    tier: (profile?.tier as "free" | "pro" | "team" | "admin") ?? "free",
     displayName: user.user_metadata?.full_name,
   };
 }

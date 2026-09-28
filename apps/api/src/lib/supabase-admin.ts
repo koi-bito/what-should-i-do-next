@@ -17,6 +17,7 @@ export const supabaseAdmin = createClient(
       persistSession: false,
     },
     global: {
+      // @ts-ignore - Supabase JS v2 types don't include WebSocket, but runtime requires it on Node < 22
       WebSocket: WebSocket as any,
     },
   }

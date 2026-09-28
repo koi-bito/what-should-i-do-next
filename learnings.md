@@ -10,6 +10,7 @@ A place to document technical discoveries, architecture decisions, and project m
 - **Node Environments**: When using workspaces, `npm run dev` might throw a minor `ENOWORKSPACES` warning when spawning child processes, but it does not interrupt execution.
 - **Express Auth**: Ensure `cookie-parser` is explicitly installed and mounted before any auth middleware runs, otherwise reading secure cookies (like Supabase tokens) will silently fail.
 - **Git Hygiene**: Always initialize Git before writing significant code, and don't forget to use `git pull origin main --allow-unrelated-histories` if you create the remote repository *after* generating your local codebase.
+- **drizzle-kit v0.21 Breaking Change**: `driver: "pg"` → `dialect: "postgresql"` and `dbCredentials.connectionString` → `dbCredentials.url`. Always pin drizzle-kit and drizzle-orm to matching versions to avoid silent config schema drift.
 
 ### Phase 1 Retrospective & Architecture Learnings
 

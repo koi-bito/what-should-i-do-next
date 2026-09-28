@@ -1,0 +1,139 @@
+"use client";
+
+import { useState } from "react";
+import type { ContextPayload } from "@/types/api";
+
+interface ContextInputProps {
+  onSubmit: (context: ContextPayload) => void;
+  isSubmitting: boolean;
+}
+
+const ENERGY_OPTIONS = [
+  { value: 1, label: "😴", desc: "Exhausted" },
+  { value: 2, label: "😪", desc: "Low" },
+  { value: 3, label: "😐", desc: "Okay" },
+  { value: 4, label: "😊", desc: "Good" },
+  { value: 5, label: "🚀", desc: "On fire" },
+];
+
+const TIME_OPTIONS = [
+  { value: 10, label: "10m" },
+  { value: 15, label: "15m" },
+  { value: 30, label: "30m" },
+  { value: 60, label: "1h" },
+  { value: 90, label: "1.5h" },
+  { value: 120, label: "2h+" },
+];
+
+export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
+  const [energyLevel, setEnergyLevel] = useState<number>(3);
+  const [minutesAvailable, setMinutesAvailable] = useState<number>(30);
+  const [mood, setMood] = useState<string>("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    onSubmit({
+      energyLevel: energyLevel as 1 | 2 | 3 | 4 | 5,
+      minutesAvailable,
+      mood: mood || undefined,
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="card p-6 space-y-6 animate-fade-slide-up" id="context-input-form">
+      <div>
+        <h2 className="text-xl font-semibold text-foreground mb-1">
+          What should you do next?
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Tell us where you're at — we'll find the one right thing to do.
+        </p>
+      </div>
+
+      {/* Energy Level */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-3">
+          How's your energy right now?
+        </label>
+        <div className="flex gap-2">
+          {ENERGY_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              id={`energy-${opt.value}`}
+              onClick={() => setEnergyLevel(opt.value)}
+              className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border text-sm transition-all duration-150 ${
+                energyLevel === opt.value
+                  ? "border-primary bg-primary/10 text-foreground scale-105"
+                  : "border-border bg-surface text-muted-foreground hover:border-primary/40 hover:bg-surface-hover"
+              }`}
+            >
+              <span className="text-xl">{opt.label}</span>
+              <span className="text-xs hidden sm:block">{opt.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Time Available */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-3">
+          How much time do you have?
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {TIME_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              id={`time-${opt.value}`}
+              onClick={() => setMinutesAvailable(opt.value)}
+              className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all duration-150 ${
+                minutesAvailable === opt.value
+                  ? "border-primary bg-primary/10 text-primary scale-105"
+                  : "border-border bg-surface text-muted-foreground hover:border-primary/40 hover:bg-surface-hover"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mood (optional) */}
+      <div>
+        <label htmlFor="mood-input" className="block text-sm font-medium text-foreground mb-3">
+          Anything else on your mind? <span className="text-muted-foreground font-normal">(optional)</span>
+        </label>
+        <input
+          id="mood-input"
+          type="text"
+          placeholder="e.g. feeling scattered, need a win, avoiding emails..."
+          value={mood}
+          onChange={(e) => setMood(e.target.value)}
+          maxLength={120}
+          className="input-base"
+        />
+      </div>
+
+      {/* Submit */}
+      <button
+        type="submit"
+        id="get-next-action-btn"
+        disabled={isSubmitting}
+        className="btn-primary w-full py-3.5 text-base shadow-glow-primary"
+      >
+        {isSubmitting ? (
+          <span className="flex items-center justify-center gap-3">
+            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Finding your next action...
+          </span>
+        ) : (
+          "What should I do next? →"
+        )}
+      </button>
+    </form>
+  );
+}

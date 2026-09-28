@@ -3,8 +3,8 @@ import type { Config } from "drizzle-kit";
 export default {
   schema: "./src/lib/schema.ts",
   out: "./drizzle",
-  driver: "pg",
+  dialect: "postgresql",
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL ?? "postgres://whatnext:whatnext@localhost:5432/whatnext_dev",
+    url: process.env.DATABASE_URL ?? "postgres://whatnext:whatnext@localhost:5432/whatnext_dev",
   },
 } satisfies Config;

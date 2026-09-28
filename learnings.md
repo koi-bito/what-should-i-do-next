@@ -11,7 +11,8 @@ A place to document technical discoveries, architecture decisions, and project m
 - **Express Auth**: Ensure `cookie-parser` is explicitly installed and mounted before any auth middleware runs, otherwise reading secure cookies (like Supabase tokens) will silently fail.
 - **Git Hygiene**: Always initialize Git before writing significant code, and don't forget to use `git pull origin main --allow-unrelated-histories` if you create the remote repository *after* generating your local codebase.
 - **drizzle-kit v0.21 Breaking Change**: `driver: "pg"` → `dialect: "postgresql"` and `dbCredentials.connectionString` → `dbCredentials.url`. Always pin drizzle-kit and drizzle-orm to matching versions to avoid silent config schema drift.
-- **Supabase JS on Node < 22**: `@supabase/supabase-js` v2 requires a native WebSocket implementation. In Node 20 (common in CI), this is missing and will crash `createClient`. Fix this by installing `ws` and passing it to the client via `global: { WebSocket }`.
+- **Supabase JS on Node < 22**: `@supabase/supabase-js` v2 requires a native WebSocket implementation. In Node 20 (common in CI), this is missing and will crash `createClient`. Passing `global: { WebSocket }` to the client config works for the core client, but **fails for `@supabase/realtime-js`** (which throws a missing WebSocket error). The true fix is to polyfill it globally before client creation: `if (typeof globalThis.WebSocket === "undefined") { globalThis.WebSocket = require("ws") as any; }`.
+- **Inline Feedback UX**: To maintain flow, feedback on rejected items (e.g. "Why did you reject this?") should happen inline in the card before fetching a replacement, rather than bouncing the user to a new page or a blocking modal.
 
 ### Phase 1 Retrospective & Architecture Learnings
 

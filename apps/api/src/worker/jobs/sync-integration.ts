@@ -12,6 +12,7 @@ export async function syncIntegration(
   // Notion: poll selected database
   // TickTick: full poll
 
+  // eslint-disable-next-line no-console
   console.log(`[sync-integration] Syncing ${provider} for user ${userId}`);
 
   await db
@@ -20,7 +21,7 @@ export async function syncIntegration(
     .where(
       and(
         eq(integrations.userId, userId),
-        eq(integrations.provider, provider as any)
+        eq(integrations.provider, provider as "google_calendar" | "todoist" | "notion" | "ticktick")
       )
     );
 }

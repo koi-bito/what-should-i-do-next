@@ -1,6 +1,6 @@
 import { db } from "../../lib/db";
-import { goals, tasks, actions, contexts, feedback, queries, profiles } from "../../lib/schema";
-import { eq, and, desc, lte } from "drizzle-orm";
+import { goals, tasks, actions, feedback, queries, profiles } from "../../lib/schema";
+import { eq, and, desc } from "drizzle-orm";
 import type { FullContext } from "../ai/ai-engine";
 
 interface ManualContext {

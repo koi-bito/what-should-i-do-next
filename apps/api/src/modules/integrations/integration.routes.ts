@@ -86,7 +86,7 @@ integrationRouter.delete(
         .where(
           and(
             eq(integrations.userId, req.userId!),
-            eq(integrations.provider, req.params.provider as any)
+            eq(integrations.provider, req.params.provider as "google_calendar" | "todoist" | "notion" | "ticktick")
           )
         );
 

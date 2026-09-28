@@ -29,6 +29,7 @@ new Worker(
   async (job) => {
     if (job.name === "fan-out") {
       // TODO: Query all Pro users and enqueue one job per user
+      // eslint-disable-next-line no-console
       console.log("[worker] daily-digest fan-out triggered");
     } else {
       await sendDailyDigest(job.data.userId as string);
@@ -59,4 +60,5 @@ digestQueue.add(
   }
 );
 
+// eslint-disable-next-line no-console
 console.log("[worker] BullMQ workers started");

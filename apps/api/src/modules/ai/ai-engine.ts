@@ -218,7 +218,7 @@ export async function generateNextAction(
       );
       modelUsed = "claude-sonnet-4-5-retry";
     }
-  } catch (sonnetErr) {
+  } catch (_sonnetErr) {
     // Tier 2: Claude Haiku (faster/cheaper fallback)
     try {
       output = await callClaude(userPrompt, "claude-haiku-4-5");

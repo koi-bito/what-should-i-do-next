@@ -3,7 +3,7 @@ import { z } from "zod";
 import { rateLimit } from "../../middleware/rate-limit";
 import { db } from "../../lib/db";
 import { actions, feedback, queries } from "../../lib/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { buildUserContext } from "../queries/context-builder";
 import { generateNextAction } from "../ai/ai-engine";
 import type { AuthedRequest } from "../../middleware/require-auth";
@@ -94,7 +94,7 @@ actionRouter.patch(
       }
 
       // Generate a fresh replacement using the same last context
-      const [lastQuery] = await db
+      const [_lastQuery] = await db
         .select()
         .from(queries)
         .where(eq(queries.id, action.queryId));

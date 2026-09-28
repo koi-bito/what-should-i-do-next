@@ -17,14 +17,14 @@ taskRouter.get(
       const status = (req.query.status as string) || "open";
       const source = req.query.source as string | undefined;
 
-      let query = db
+      const query = db
         .select()
         .from(tasks)
         .where(
           and(
             eq(tasks.userId, req.userId!),
-            source ? eq(tasks.source, source as any) : undefined,
-            eq(tasks.status, status as any)
+            source ? eq(tasks.source, source as "native" | "todoist" | "notion" | "ticktick" | "calendar") : undefined,
+            eq(tasks.status, status as "open" | "done" | "snoozed" | "archived")
           )
         );
 

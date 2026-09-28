@@ -79,7 +79,9 @@ app.use(errorHandler);
 if (require.main === module) {
   const port = Number(process.env.PORT ?? 8080);
   app.listen(port, () => {
+    // eslint-disable-next-line no-console
     console.log(`✅ API listening on http://localhost:${port}`);
+    // eslint-disable-next-line no-console
     console.log(`   Health: http://localhost:${port}/health`);
   });
 }

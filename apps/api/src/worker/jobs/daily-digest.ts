@@ -6,6 +6,7 @@ const resend = process.env.RESEND_API_KEY
 
 export async function sendDailyDigest(userId: string): Promise<void> {
   if (!resend) {
+    // eslint-disable-next-line no-console
     console.log(`[daily-digest] Resend not configured, skipping user ${userId}`);
     return;
   }
@@ -16,5 +17,6 @@ export async function sendDailyDigest(userId: string): Promise<void> {
   // 3. Render email template
   // 4. Send via Resend
 
+  // eslint-disable-next-line no-console
   console.log(`[daily-digest] Sent digest for user ${userId}`);
 }

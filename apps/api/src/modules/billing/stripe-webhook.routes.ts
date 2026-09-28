@@ -77,7 +77,7 @@ stripeWebhookRouter.post(
           await db
             .update(subscriptions)
             .set({
-              status: sub.status as any,
+              status: sub.status as "active" | "past_due" | "canceled" | "trialing",
               plan,
               currentPeriodEnd: new Date(sub.current_period_end * 1000),
               updatedAt: new Date(),

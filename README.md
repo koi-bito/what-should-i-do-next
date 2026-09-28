@@ -1,5 +1,13 @@
 # What Should I Do Next?
 
+[![CI](https://github.com/koi-bito/what-should-i-do-next/actions/workflows/ci.yml/badge.svg)](https://github.com/koi-bito/what-should-i-do-next/actions/workflows/ci.yml)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen?logo=node.js)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3ECF8E?logo=supabase)](https://supabase.com/)
+[![Claude](https://img.shields.io/badge/Anthropic-Claude-cc785c?logo=anthropic)](https://anthropic.com/)
+[![License](https://img.shields.io/badge/license-private-red)](#)
+
 **A decision-engine productivity app for people who are stuck, not lazy.**
 
 You open your task manager, see 40 items, and close the laptop having done nothing — not because you're lazy, but because the cost of choosing exceeds the cost of any individual task. **What Should I Do Next?** removes the choice. It looks at everything you have going on and returns exactly one instruction.

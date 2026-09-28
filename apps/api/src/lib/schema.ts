@@ -5,7 +5,6 @@ import {
   smallint,
   integer,
   numeric,
-  boolean,
   timestamp,
   date,
   jsonb,
@@ -13,7 +12,6 @@ import {
   index,
   uniqueIndex,
   primaryKey,
-  check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 

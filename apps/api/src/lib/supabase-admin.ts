@@ -1,6 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import WebSocket from "ws";
 
+// Polyfill WebSocket globally for Node 20 (GitHub Actions CI) so @supabase/realtime-js can find it
+if (typeof globalThis.WebSocket === "undefined") {
+  globalThis.WebSocket = WebSocket as any;
+}
+
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   // eslint-disable-next-line no-console
   console.warn(
@@ -15,10 +20,6 @@ export const supabaseAdmin = createClient(
     auth: {
       autoRefreshToken: false,
       persistSession: false,
-    },
-    global: {
-      // @ts-expect-error - Supabase JS v2 types don't include WebSocket, but runtime requires it on Node < 22
-      WebSocket: WebSocket as any,
     },
   }
 );

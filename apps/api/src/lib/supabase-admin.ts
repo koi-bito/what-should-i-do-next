@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
+import WebSocket from "ws";
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  // eslint-disable-next-line no-console
   console.warn(
     "[supabase-admin] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set. Auth features will fail."
   );
@@ -13,6 +15,9 @@ export const supabaseAdmin = createClient(
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+    },
+    global: {
+      WebSocket: WebSocket as any,
     },
   }
 );

@@ -7,7 +7,7 @@ interface NextActionCardProps {
   action: Action;
   isResponding: boolean;
   onAccept: () => void;
-  onReject: () => void;
+  onReject: (reasonTag?: string) => void;
   onSnooze: () => void;
 }
 
@@ -20,6 +20,7 @@ export function NextActionCard({
 }: NextActionCardProps) {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
 
   useEffect(() => {
     // Trigger entrance animation
@@ -32,6 +33,23 @@ export function NextActionCard({
     await new Promise((r) => setTimeout(r, 400));
     onAccept();
   }
+
+  function handleRejectClick() {
+    setIsRejecting(true);
+  }
+
+  function handleReasonSelect(reasonTag: string) {
+    onReject(reasonTag);
+    setIsRejecting(false); // Reset state in case component stays mounted during loading skeleton
+  }
+
+  const REJECT_REASONS = [
+    { value: "wrong_priority", label: "Wrong priority" },
+    { value: "bad_timing", label: "Bad timing" },
+    { value: "already_done", label: "Already done" },
+    { value: "not_actionable", label: "Not actionable" },
+    { value: "other", label: "Other" },
+  ];
 
   return (
     <div
@@ -83,46 +101,75 @@ export function NextActionCard({
             {action.reasoning}
           </p>
 
-          {/* Action buttons */}
-          <div className="flex gap-2">
-            <button
-              id="accept-action-btn"
-              onClick={handleAccept}
-              disabled={isResponding}
-              className="flex-1 py-3 rounded-xl bg-success/10 text-success border border-success/20 text-sm font-semibold
-                         hover:bg-success/20 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2"
-            >
-              <span>✓</span>
-              <span>Do it</span>
-            </button>
+          {/* Action buttons / Feedback Flow */}
+          <div className="relative min-h-[50px]">
+            {isRejecting ? (
+              <div className="animate-fade-in space-y-3">
+                <p className="text-sm font-medium text-foreground text-center">
+                  Why not this one?
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {REJECT_REASONS.map((r) => (
+                    <button
+                      key={r.value}
+                      onClick={() => handleReasonSelect(r.value)}
+                      className="text-xs px-3 py-1.5 rounded-full border border-border bg-card text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setIsRejecting(false)}
+                  className="w-full text-xs text-muted-foreground/60 hover:text-foreground mt-2"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2 animate-fade-in">
+                <button
+                  id="accept-action-btn"
+                  onClick={handleAccept}
+                  disabled={isResponding}
+                  className="flex-1 py-3 rounded-xl bg-success/10 text-success border border-success/20 text-sm font-semibold
+                             hover:bg-success/20 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2"
+                >
+                  <span>✓</span>
+                  <span>Do it</span>
+                </button>
 
-            <button
-              id="reject-action-btn"
-              onClick={onReject}
-              disabled={isResponding}
-              className="flex-1 py-3 rounded-xl bg-destructive/10 text-destructive border border-destructive/20 text-sm font-semibold
-                         hover:bg-destructive/20 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2"
-            >
-              <span>✗</span>
-              <span>Not now</span>
-            </button>
+                <button
+                  id="reject-action-btn"
+                  onClick={handleRejectClick}
+                  disabled={isResponding}
+                  className="flex-1 py-3 rounded-xl bg-destructive/10 text-destructive border border-destructive/20 text-sm font-semibold
+                             hover:bg-destructive/20 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2"
+                >
+                  <span>✗</span>
+                  <span>Not now</span>
+                </button>
 
-            <button
-              id="snooze-action-btn"
-              onClick={onSnooze}
-              disabled={isResponding}
-              className="flex-1 py-3 rounded-xl bg-warning/10 text-warning border border-warning/20 text-sm font-semibold
-                         hover:bg-warning/20 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2"
-            >
-              <span>⏸</span>
-              <span>Later</span>
-            </button>
+                <button
+                  id="snooze-action-btn"
+                  onClick={onSnooze}
+                  disabled={isResponding}
+                  className="flex-1 py-3 rounded-xl bg-warning/10 text-warning border border-warning/20 text-sm font-semibold
+                             hover:bg-warning/20 active:scale-95 transition-all duration-150 flex items-center justify-center gap-2"
+                >
+                  <span>⏸</span>
+                  <span>Later</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Pro tip */}
-          <p className="text-xs text-muted-foreground/60 mt-4 text-center">
-            Reject to get a different suggestion instantly
-          </p>
+          {!isRejecting && (
+            <p className="text-xs text-muted-foreground/60 mt-4 text-center">
+              Reject to get a different suggestion instantly
+            </p>
+          )}
         </div>
       )}
     </div>

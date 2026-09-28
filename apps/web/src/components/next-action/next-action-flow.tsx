@@ -34,13 +34,20 @@ export function NextActionFlow() {
     }
   }
 
-  async function handleRespond(kind: "accept" | "reject" | "snooze") {
+  async function handleRespond(
+    kind: "accept" | "reject" | "snooze",
+    reasonTag?: string
+  ) {
     if (!action) return;
     setIsResponding(true);
 
     try {
+      // For reject, we might have a reasonTag we want to send in the body
+      const body = kind === "reject" && reasonTag ? { reasonTag } : undefined;
+
       const data = await apiClient.patch<{ action: Action | null }>(
-        `/actions/${action.id}/${kind}`
+        `/actions/${action.id}/${kind}`,
+        body
       );
 
       // Reject returns a fresh replacement action
@@ -92,7 +99,7 @@ export function NextActionFlow() {
       action={action}
       isResponding={isResponding}
       onAccept={() => handleRespond("accept")}
-      onReject={() => handleRespond("reject")}
+      onReject={(reason) => handleRespond("reject", reason)}
       onSnooze={() => handleRespond("snooze")}
     />
   );

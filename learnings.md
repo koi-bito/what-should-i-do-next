@@ -23,21 +23,3 @@ A place to document technical discoveries, architecture decisions, and project m
 
 - **Inline Feedback UX**: To maintain flow, feedback on rejected items (e.g. "Why did you reject this?") should happen inline in the card before fetching a replacement, rather than bouncing the user to a new page or a blocking modal. This micro-interaction dramatically increases the likelihood of users actually providing the reason tag.
 
----
-
-## 📝 Quick Post Summary
-
-*(Feel free to copy/paste this for Twitter, LinkedIn, or a dev log update!)*
-
-**Building "What Should I Do Next?": Crossing the MVP Finish Line 🚀**
-
-Just wrapped up Phase 1 of our AI decision-engine app and officially moving into Phase 2 (UX Polish)! We've successfully built out the core infrastructure: a TurboRepo monorepo with Next.js, an Express API, Supabase Auth, and a Drizzle+PostgreSQL backend.
-
-A few massive technical wins along the way:
-- **Resilient AI Pipeline**: Built a 3-tier cascade (Claude Sonnet → Haiku → Rule-based fallback) so the user is *never* left hanging if an LLM times out.
-- **Monorepo Discipline**: Strictly decoupled our Next.js frontend from the ORM. The frontend is a pure client to the Express API, making the codebase a breeze to scale.
-- **CI/CD Gotchas Escaped**: Navigated undocumented breaking changes in `drizzle-kit` v0.21 and discovered that `@supabase/realtime-js` requires a strict `globalThis.WebSocket` polyfill to run properly in Node 20 GitHub Actions.
-
-Right out of the gate in Phase 2, we shipped an **Inline Reject Flow**. When the AI suggests a task you don't want to do, you can instantly tag *why* (bad timing, wrong priority) inline without breaking your flow. This feedback will fuel our personalization engine going forward. 
-
-Next up: Empty states, History filtering, and some serious onboarding polish! ✨

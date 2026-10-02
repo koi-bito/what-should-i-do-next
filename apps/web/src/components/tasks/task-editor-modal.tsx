@@ -21,6 +21,7 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
   const [isSaving, setIsSaving] = useState(false);
   const { error: showError } = useToast();
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus title input on open
   useEffect(() => {
@@ -36,6 +37,37 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onClose]);
+
+  // Focus trap
+  useEffect(() => {
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== "Tab" || !modalRef.current) return;
+      
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      ) as NodeListOf<HTMLElement>;
+      
+      if (focusableElements.length === 0) return;
+      
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    }
+    
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, []);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -73,7 +105,7 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative card w-full max-w-md p-6 shadow-card-primary animate-fade-slide-up">
+      <div ref={modalRef} className="relative card w-full max-w-md p-6 shadow-card-primary animate-fade-slide-up">
         <h2 id="task-editor-title" className="text-lg font-semibold text-foreground mb-6">
           {task ? "Edit Task" : "Add Task"}
         </h2>

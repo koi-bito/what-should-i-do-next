@@ -19,6 +19,7 @@ export function GoalEditorModal({ goal, onClose, onSave }: GoalEditorModalProps)
   const [isSaving, setIsSaving] = useState(false);
   const { error: showError } = useToast();
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus title input on open
   useEffect(() => {
@@ -34,6 +35,51 @@ export function GoalEditorModal({ goal, onClose, onSave }: GoalEditorModalProps)
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onClose]);
+
+  // Focus trap
+  useEffect(() => {
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== "Tab" || !modalRef.current) return;
+      
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      ) as NodeListOf<HTMLElement>;
+      
+      if (focusableElements.length === 0) return;
+      
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    }
+    
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, []);
+
+  function handlePriorityKeyDown(e: React.KeyboardEvent, p: number) {
+    let nextP = p;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      nextP = p === 5 ? 1 : p + 1;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      nextP = p === 1 ? 5 : p - 1;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    setPriority(nextP);
+    document.getElementById(`priority-${nextP}`)?.focus();
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -69,7 +115,7 @@ export function GoalEditorModal({ goal, onClose, onSave }: GoalEditorModalProps)
       aria-labelledby="goal-editor-title"
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div className="relative card w-full max-w-md p-6 shadow-card-primary animate-fade-slide-up">
+      <div ref={modalRef} className="relative card w-full max-w-md p-6 shadow-card-primary animate-fade-slide-up">
         <h2 id="goal-editor-title" className="text-lg font-semibold text-foreground mb-6">
           {goal ? "Edit Goal" : "Add Goal"}
         </h2>
@@ -101,11 +147,14 @@ export function GoalEditorModal({ goal, onClose, onSave }: GoalEditorModalProps)
                 {[1, 2, 3, 4, 5].map((p) => (
                   <button
                     key={p}
+                    id={`priority-${p}`}
                     type="button"
                     role="radio"
                     aria-checked={priority === p}
                     aria-label={`Priority ${p}: ${PRIORITY_LABELS[p]}`}
+                    tabIndex={priority === p ? 0 : -1}
                     onClick={() => setPriority(p)}
+                    onKeyDown={(e) => handlePriorityKeyDown(e, p)}
                     className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
                       priority === p
                         ? "bg-primary text-white"

@@ -30,6 +30,36 @@ export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
   const [minutesAvailable, setMinutesAvailable] = useState<number>(30);
   const [mood, setMood] = useState<string>("");
 
+  function handleEnergyKeyDown(e: React.KeyboardEvent, index: number) {
+    let nextIndex = index;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      nextIndex = (index + 1) % ENERGY_OPTIONS.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      nextIndex = (index - 1 + ENERGY_OPTIONS.length) % ENERGY_OPTIONS.length;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    const nextValue = ENERGY_OPTIONS[nextIndex].value;
+    setEnergyLevel(nextValue);
+    document.getElementById(`energy-${nextValue}`)?.focus();
+  }
+
+  function handleTimeKeyDown(e: React.KeyboardEvent, index: number) {
+    let nextIndex = index;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      nextIndex = (index + 1) % TIME_OPTIONS.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      nextIndex = (index - 1 + TIME_OPTIONS.length) % TIME_OPTIONS.length;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    const nextValue = TIME_OPTIONS[nextIndex].value;
+    setMinutesAvailable(nextValue);
+    document.getElementById(`time-${nextValue}`)?.focus();
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSubmit({
@@ -56,15 +86,17 @@ export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
           How&apos;s your energy right now?
         </legend>
         <div className="flex gap-2" role="radiogroup" aria-label="Energy level">
-          {ENERGY_OPTIONS.map((opt) => (
+          {ENERGY_OPTIONS.map((opt, index) => (
             <button
               key={opt.value}
               type="button"
               role="radio"
               aria-checked={energyLevel === opt.value}
               aria-label={`${opt.desc} (${opt.value} out of 5)`}
+              tabIndex={energyLevel === opt.value ? 0 : -1}
               id={`energy-${opt.value}`}
               onClick={() => setEnergyLevel(opt.value)}
+              onKeyDown={(e) => handleEnergyKeyDown(e, index)}
               className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border text-sm transition-all duration-150 ${
                 energyLevel === opt.value
                   ? "border-primary bg-primary/10 text-foreground scale-105"
@@ -84,15 +116,17 @@ export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
           How much time do you have?
         </legend>
         <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Available time">
-          {TIME_OPTIONS.map((opt) => (
+          {TIME_OPTIONS.map((opt, index) => (
             <button
               key={opt.value}
               type="button"
               role="radio"
               aria-checked={minutesAvailable === opt.value}
               aria-label={`${opt.label} available`}
+              tabIndex={minutesAvailable === opt.value ? 0 : -1}
               id={`time-${opt.value}`}
               onClick={() => setMinutesAvailable(opt.value)}
+              onKeyDown={(e) => handleTimeKeyDown(e, index)}
               className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all duration-150 ${
                 minutesAvailable === opt.value
                   ? "border-primary bg-primary/10 text-primary scale-105"

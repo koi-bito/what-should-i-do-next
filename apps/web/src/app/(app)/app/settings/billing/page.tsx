@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { PlanCard } from "@/components/settings/plan-card";
-import Link from "next/link";
+import { CheckoutButton } from "@/components/settings/checkout-button";
+import { getUsageSummary } from "@/lib/api/server";
 
 export const metadata: Metadata = { title: "Billing" };
 
-export default function BillingPage() {
+export default async function BillingPage() {
+  const usage = await getUsageSummary();
+
   return (
     <div className="space-y-6">
       <div>
@@ -12,9 +15,10 @@ export default function BillingPage() {
         <p className="text-sm text-muted-foreground mt-1">Manage your plan and usage.</p>
       </div>
 
-      <PlanCard plan="free" queriesUsed={3} queriesLimit={5} />
+      <PlanCard plan={usage.tier} queriesUsed={usage.queriesUsedToday} queriesLimit={usage.queriesLimit} />
 
-      <div className="card p-6">
+      {usage.tier === "free" && (
+        <div className="card p-6">
         <h3 className="font-semibold text-foreground mb-4">Upgrade to Pro</h3>
         <div className="flex items-baseline gap-2 mb-4">
           <span className="text-3xl font-bold text-foreground">$8</span>
@@ -25,10 +29,9 @@ export default function BillingPage() {
             <li key={f} className="flex gap-2"><span className="text-success">✓</span>{f}</li>
           ))}
         </ul>
-        <Link href="/pricing" className="btn-primary inline-block text-sm py-2.5 px-6 shadow-glow-primary">
-          Upgrade now →
-        </Link>
-      </div>
+          <CheckoutButton plan="pro" />
+        </div>
+      )}
     </div>
   );
 }

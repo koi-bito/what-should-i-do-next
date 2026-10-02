@@ -14,7 +14,7 @@ export default async function AppLayout({
       <TopNav user={user} />
       <div className="flex">
         <ResponsiveSidebar />
-        <main className="flex-1 px-4 py-6 md:px-8 max-w-3xl mx-auto pb-24 md:pb-6">
+        <main id="main-content" role="main" className="flex-1 px-4 py-6 md:px-8 max-w-3xl mx-auto pb-24 md:pb-6">
           {children}
         </main>
       </div>

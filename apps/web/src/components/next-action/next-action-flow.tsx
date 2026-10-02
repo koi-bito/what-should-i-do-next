@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ContextInput } from "./context-input";
 import { NextActionCard } from "./next-action-card";
 import { apiClient } from "@/lib/api/client";
+import { useToast } from "@/components/ui/toast";
 import type { Action, ContextPayload } from "@/types/api";
 
 export function NextActionFlow() {
@@ -11,6 +12,7 @@ export function NextActionFlow() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResponding, setIsResponding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { success, error: showError, warning } = useToast();
 
   async function handleSubmitContext(context: ContextPayload) {
     setIsLoading(true);
@@ -26,8 +28,10 @@ export function NextActionFlow() {
         setError(
           "You've used all 5 free queries today. Upgrade to Pro for unlimited access."
         );
+        warning("Daily query limit reached");
       } else {
         setError(err.message ?? "Something went wrong. Please try again.");
+        showError("Failed to get a suggestion");
       }
     } finally {
       setIsLoading(false);
@@ -55,9 +59,14 @@ export function NextActionFlow() {
         setAction(data.action);
       } else {
         setAction(null); // Accept/snooze — back to context input
+        if (kind === "accept") {
+          success("Action accepted — go get it done! 💪");
+        } else if (kind === "snooze") {
+          success("Snoozed — we'll bring it back later");
+        }
       }
     } catch (err: any) {
-      setError(err.message ?? "Something went wrong.");
+      showError(err.message ?? "Something went wrong.");
     } finally {
       setIsResponding(false);
     }
@@ -65,12 +74,22 @@ export function NextActionFlow() {
 
   if (error && !action) {
     return (
-      <div className="card p-6 animate-fade-slide-up">
+      <div className="card p-6 animate-fade-slide-up border-warning/20" role="alert">
         <div className="text-center space-y-4">
-          <div className="text-3xl">😮</div>
-          <p className="text-sm text-muted-foreground">{error}</p>
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-warning/10 border border-warning/20 flex items-center justify-center">
+            {error.includes("upgrade") ? (
+              <svg className="w-7 h-7 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            ) : (
+              <svg className="w-7 h-7 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">{error}</p>
           {error.includes("upgrade") && (
-            <a href="/app/settings/billing" className="btn-primary inline-block text-sm py-2 px-6">
+            <a href="/app/settings/billing" className="btn-primary inline-block text-sm py-2.5 px-6">
               Upgrade to Pro →
             </a>
           )}
@@ -78,7 +97,7 @@ export function NextActionFlow() {
             onClick={() => setError(null)}
             className="btn-ghost text-sm block w-full"
           >
-            Try again
+            {error.includes("upgrade") ? "Maybe later" : "Try again"}
           </button>
         </div>
       </div>

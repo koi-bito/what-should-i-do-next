@@ -40,26 +40,29 @@ export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card p-6 space-y-6 animate-fade-slide-up" id="context-input-form">
+    <form onSubmit={handleSubmit} className="card p-6 space-y-6 animate-fade-slide-up" id="context-input-form" aria-label="Context input form">
       <div>
         <h2 className="text-xl font-semibold text-foreground mb-1">
           What should you do next?
         </h2>
         <p className="text-sm text-muted-foreground">
-          Tell us where you're at — we'll find the one right thing to do.
+          Tell us where you&apos;re at — we&apos;ll find the one right thing to do.
         </p>
       </div>
 
       {/* Energy Level */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-3">
-          How's your energy right now?
-        </label>
-        <div className="flex gap-2">
+      <fieldset>
+        <legend className="block text-sm font-medium text-foreground mb-3">
+          How&apos;s your energy right now?
+        </legend>
+        <div className="flex gap-2" role="radiogroup" aria-label="Energy level">
           {ENERGY_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               type="button"
+              role="radio"
+              aria-checked={energyLevel === opt.value}
+              aria-label={`${opt.desc} (${opt.value} out of 5)`}
               id={`energy-${opt.value}`}
               onClick={() => setEnergyLevel(opt.value)}
               className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-xl border text-sm transition-all duration-150 ${
@@ -68,23 +71,26 @@ export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
                   : "border-border bg-surface text-muted-foreground hover:border-primary/40 hover:bg-surface-hover"
               }`}
             >
-              <span className="text-xl">{opt.label}</span>
+              <span className="text-xl" aria-hidden="true">{opt.label}</span>
               <span className="text-xs hidden sm:block">{opt.desc}</span>
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Time Available */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-3">
+      <fieldset>
+        <legend className="block text-sm font-medium text-foreground mb-3">
           How much time do you have?
-        </label>
-        <div className="flex flex-wrap gap-2">
+        </legend>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Available time">
           {TIME_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               type="button"
+              role="radio"
+              aria-checked={minutesAvailable === opt.value}
+              aria-label={`${opt.label} available`}
               id={`time-${opt.value}`}
               onClick={() => setMinutesAvailable(opt.value)}
               className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all duration-150 ${
@@ -97,7 +103,7 @@ export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Mood (optional) */}
       <div>
@@ -112,7 +118,9 @@ export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
           onChange={(e) => setMood(e.target.value)}
           maxLength={120}
           className="input-base"
+          aria-describedby="mood-hint"
         />
+        <p id="mood-hint" className="sr-only">Optional free-text field to describe your current mood or context</p>
       </div>
 
       {/* Submit */}
@@ -124,7 +132,7 @@ export function ContextInput({ onSubmit, isSubmitting }: ContextInputProps) {
       >
         {isSubmitting ? (
           <span className="flex items-center justify-center gap-3">
-            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>

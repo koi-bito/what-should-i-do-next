@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { apiClient } from "@/lib/api/client";
 import type { Task } from "@/types/api";
+import { useToast } from "@/components/ui/toast";
 
 interface TaskEditorModalProps {
   task?: Task | null;
@@ -18,6 +19,23 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
   );
   const [dueAt, setDueAt] = useState(task?.dueAt?.slice(0, 16) ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const { error: showError } = useToast();
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus title input on open
+  useEffect(() => {
+    const t = setTimeout(() => titleInputRef.current?.focus(), 100);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Close on escape
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -37,20 +55,26 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
       onSave(saved);
       onClose();
     } catch (err: any) {
-      console.error("Failed to save task:", err);
+      showError(err.message ?? "Failed to save task. Please try again.");
     } finally {
       setIsSaving(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="task-editor-title"
+    >
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
       <div className="relative card w-full max-w-md p-6 shadow-card-primary animate-fade-slide-up">
-        <h2 className="text-lg font-semibold text-foreground mb-6">
+        <h2 id="task-editor-title" className="text-lg font-semibold text-foreground mb-6">
           {task ? "Edit Task" : "Add Task"}
         </h2>
 
@@ -60,6 +84,7 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
               Title *
             </label>
             <input
+              ref={titleInputRef}
               id="task-title"
               type="text"
               value={title}
@@ -97,6 +122,7 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
                 placeholder="30"
                 min={1}
                 max={480}
+                aria-label="Estimated time in minutes"
               />
             </div>
             <div>
@@ -109,6 +135,7 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
                 value={dueAt}
                 onChange={(e) => setDueAt(e.target.value)}
                 className="input-base"
+                aria-label="Task due date and time"
               />
             </div>
           </div>
@@ -118,7 +145,15 @@ export function TaskEditorModal({ task, onClose, onSave }: TaskEditorModalProps)
               Cancel
             </button>
             <button type="submit" id="save-task-btn" className="btn-primary flex-1" disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save Task"}
+              {isSaving ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Saving...
+                </span>
+              ) : "Save Task"}
             </button>
           </div>
         </form>

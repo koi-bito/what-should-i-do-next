@@ -94,6 +94,10 @@ const config: Config = {
           "0%, 100%": { boxShadow: "0 0 20px rgba(108, 92, 231, 0.2)" },
           "50%": { boxShadow: "0 0 40px rgba(108, 92, 231, 0.5)" },
         },
+        "slide-down": {
+          "0%": { opacity: "0", transform: "translateY(-4px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "fade-slide-up": "fade-slide-up 0.2s ease-out",
@@ -103,6 +107,7 @@ const config: Config = {
         "shimmer": "shimmer 2s linear infinite",
         "float": "float 6s ease-in-out infinite",
         "glow": "glow 3s ease-in-out infinite",
+        "slide-down": "slide-down 0.2s ease-out",
       },
       // ── Box shadows ───────────────────────────────────────
       boxShadow: {

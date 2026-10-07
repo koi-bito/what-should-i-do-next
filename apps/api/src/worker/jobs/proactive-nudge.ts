@@ -7,7 +7,7 @@ import * as OneSignal from "@onesignal/node-onesignal";
 const configuration = OneSignal.createConfiguration({
   userKey: process.env.ONESIGNAL_USER_KEY || "",
   appKey: process.env.ONESIGNAL_REST_API_KEY || "",
-});
+} as any);
 const client = new OneSignal.DefaultApi(configuration);
 
 export async function sendProactiveNudges(): Promise<void> {
@@ -43,7 +43,7 @@ export async function sendProactiveNudges(): Promise<void> {
       try {
         const notification = new OneSignal.Notification();
         notification.app_id = appId;
-        notification.include_external_user_ids = [user.id]; // Target specific user
+        (notification as any).include_external_user_ids = [user.id]; // Target specific user
         notification.headings = { en: "Clear afternoon?" };
         notification.contents = {
           en: "You have some free time. Let WhatNext help you decide what to tackle next!",

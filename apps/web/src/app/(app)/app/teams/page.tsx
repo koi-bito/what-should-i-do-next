@@ -45,7 +45,7 @@ export default function TeamsPage() {
     queryKey: ["teams"],
     queryFn: async () => {
       const res = await apiClient.get("/teams");
-      return res.data as { data: Team[] };
+      return (res as any).data as { data: Team[] };
     },
   });
 
@@ -53,7 +53,7 @@ export default function TeamsPage() {
     queryKey: ["teams", selectedTeam],
     queryFn: async () => {
       const res = await apiClient.get(`/teams/${selectedTeam}`);
-      return res.data as { id: string; name: string; members: TeamMember[] };
+      return (res as any).data as { id: string; name: string; members: TeamMember[] };
     },
     enabled: !!selectedTeam,
   });
@@ -62,7 +62,7 @@ export default function TeamsPage() {
     queryKey: ["teams", selectedTeam, "dashboard"],
     queryFn: async () => {
       const res = await apiClient.get(`/teams/${selectedTeam}/dashboard`);
-      return res.data as { data: TeamDashboardStats[] };
+      return (res as any).data as { data: TeamDashboardStats[] };
     },
     enabled: !!selectedTeam,
   });
@@ -71,7 +71,7 @@ export default function TeamsPage() {
     queryKey: ["teams", selectedTeam, "goals"],
     queryFn: async () => {
       const res = await apiClient.get(`/teams/${selectedTeam}/goals`);
-      return res.data as { data: TeamGoal[] };
+      return (res as any).data as { data: TeamGoal[] };
     },
     enabled: !!selectedTeam,
   });
@@ -79,46 +79,45 @@ export default function TeamsPage() {
   const createTeamMutation = useMutation({
     mutationFn: async (name: string) => {
       const res = await apiClient.post("/teams", { name });
-      return res.data;
+      return (res as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       setIsCreating(false);
       setNewTeamName("");
-      toast({ title: "Team created!", type: "success" });
+      toast("Team created!", "success");
     },
     onError: () => {
-      toast({ title: "Failed to create team", type: "error" });
+      toast("Failed to create team", "error");
     },
   });
 
   const inviteMemberMutation = useMutation({
     mutationFn: async (email: string) => {
       const res = await apiClient.post(`/teams/${selectedTeam}/invites`, { email, role: "member" });
-      return res.data;
+      return (res as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["teams", selectedTeam] });
       setInviteEmail("");
-      toast({ title: "Member invited!", type: "success" });
+      toast("Member invited!", "success");
     },
     onError: (err: any) => {
-      toast({ 
-        title: "Failed to invite member", 
-        description: err.response?.data?.error?.message || "An error occurred",
-        type: "error" 
-      });
+      toast(
+        err.response?.data?.error?.message || "Failed to invite member",
+        "error"
+      );
     },
   });
 
   const createGoalMutation = useMutation({
     mutationFn: async (title: string) => {
       const res = await apiClient.post(`/teams/${selectedTeam}/goals`, { title });
-      return res.data;
+      return (res as any).data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["teams", selectedTeam, "goals"] });
-      toast({ title: "Team goal created!", type: "success" });
+      toast("Team goal created!", "success");
     },
   });
 

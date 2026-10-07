@@ -159,7 +159,7 @@ integrationRouter.get("/:provider/callback", async (req, res, next) => {
         return;
       }
 
-      const data = await tokenResponse.json();
+      const data = (await tokenResponse.json()) as any;
       accessToken = data.access_token;
       refreshToken = data.refresh_token || "";
       scope = data.scope;
@@ -184,7 +184,7 @@ integrationRouter.get("/:provider/callback", async (req, res, next) => {
         return;
       }
 
-      const data = await tokenResponse.json();
+      const data = (await tokenResponse.json()) as any;
       accessToken = data.access_token;
       // Todoist tokens don't expire typically, no refresh token.
     } else {

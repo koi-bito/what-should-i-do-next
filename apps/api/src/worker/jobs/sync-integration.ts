@@ -45,7 +45,7 @@ export async function syncIntegration(
 
       if (!res.ok) throw new Error(`Google API error: ${res.statusText}`);
 
-      const data = await res.json();
+      const data = (await res.json()) as any;
       const events = data.items || [];
       const fetchedIds = new Set<string>();
 

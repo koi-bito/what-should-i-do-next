@@ -1,28 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/auth/auth-context";
+import { supabaseBrowserClient } from "@/lib/auth/supabase-browser";
 import { useToast } from "@/components/ui/toast";
 
 export function ReferralSettings() {
-  const { session } = useAuth();
   const { toast } = useToast();
   const [inviteLink, setInviteLink] = useState("");
 
   useEffect(() => {
-    if (session?.user.id) {
-      const origin = typeof window !== "undefined" ? window.location.origin : "https://whatnext.com";
-      setInviteLink(`${origin}/signup?ref=${session.user.id}`);
-    }
-  }, [session]);
+    supabaseBrowserClient.auth.getUser().then(({ data: { user } }) => {
+      if (user?.id) {
+        const origin = typeof window !== "undefined" ? window.location.origin : "https://whatnext.com";
+        setInviteLink(`${origin}/signup?ref=${user.id}`);
+      }
+    });
+  }, []);
 
   const copyLink = () => {
     navigator.clipboard.writeText(inviteLink);
-    toast({
-      title: "Copied!",
-      description: "Invite link copied to clipboard.",
-      type: "success",
-    });
+    toast("Invite link copied to clipboard!", "success");
   };
 
   return (

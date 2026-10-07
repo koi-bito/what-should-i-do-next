@@ -177,7 +177,7 @@ userRouter.get(
       
       const rows = Array.isArray(dates) ? dates : (dates as any).rows || [];
       let streak = 0;
-      let currentCheck = new Date(todayStr);
+      const currentCheck = new Date(todayStr);
 
       for (const row of rows) {
         const rowDateStr = row.d instanceof Date ? row.d.toISOString().slice(0, 10) : String(row.d).slice(0, 10);

@@ -5,6 +5,7 @@ import { GoalsStep } from "@/components/onboarding/goals-step";
 import { WorkingHoursStep } from "@/components/onboarding/working-hours-step";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api/client";
+import posthog from "posthog-js";
 
 const STEPS = ["Goals", "Working Hours", "Done"] as const;
 
@@ -16,13 +17,17 @@ export default function OnboardingPage() {
 
   async function next() {
     if (step < STEPS.length - 1) {
+      posthog.capture("onboarding_step_completed", { step: STEPS[step] });
       setStep((s) => s + 1);
     } else {
       // Mark onboarding as complete
       try {
-        await apiClient.patch("/users/me", {
-          onboardedAt: new Date().toISOString(),
-        });
+        const referredBy = localStorage.getItem("wsidn_referral");
+        const payload: any = { onboardedAt: new Date().toISOString() };
+        if (referredBy) payload.referredBy = referredBy;
+
+        await apiClient.patch("/users/me", payload);
+        posthog.capture("onboarding_completed");
       } catch {
         // Non-blocking — continue to app even if this fails
       }

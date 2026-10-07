@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { ProfileSettings } from "@/components/settings/profile-settings";
 import { IntegrationsSettings } from "@/components/settings/integrations-settings";
+import { ReferralSettings } from "@/components/settings/referral-settings";
 import { DangerZone } from "@/components/settings/danger-zone";
 
 const TABS = [
   { id: "profile", label: "Profile", icon: "👤" },
   { id: "integrations", label: "Integrations", icon: "🔌" },
+  { id: "referrals", label: "Refer a Friend", icon: "🤝" },
   { id: "danger", label: "Danger Zone", icon: "⚠️" },
 ] as const;
 
@@ -77,6 +79,7 @@ export default function SettingsPage() {
             <>
               {tab.id === "profile" && <ProfileSettings />}
               {tab.id === "integrations" && <IntegrationsSettings />}
+              {tab.id === "referrals" && <ReferralSettings />}
               {tab.id === "danger" && <DangerZone />}
             </>
           )}

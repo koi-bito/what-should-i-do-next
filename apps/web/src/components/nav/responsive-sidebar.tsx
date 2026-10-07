@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/app/history", label: "History", icon: "📋", ariaLabel: "View query history" },
   { href: "/app/tasks", label: "Tasks", icon: "✅", ariaLabel: "Manage your tasks" },
   { href: "/app/goals", label: "Goals", icon: "🎯", ariaLabel: "Manage your goals" },
+  { href: "/app/teams", label: "Teams", icon: "👥", ariaLabel: "Manager dashboard and teams" },
   { href: "/app/settings", label: "Settings", icon: "⚙️", ariaLabel: "Account settings" },
 ];
 

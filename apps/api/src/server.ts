@@ -1,4 +1,6 @@
+import "./instrument";
 import express from "express";
+import * as Sentry from "@sentry/node";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -12,10 +14,14 @@ import { goalRouter } from "./modules/goals/goal.routes";
 import { subscriptionRouter } from "./modules/billing/subscription.routes";
 import { stripeWebhookRouter } from "./modules/billing/stripe-webhook.routes";
 import { integrationRouter } from "./modules/integrations/integration.routes";
+import { teamRouter } from "./modules/teams/team.routes";
 import { errorHandler } from "./middleware/error-handler";
 import { requireAuth } from "./middleware/require-auth";
 
 export const app = express();
+
+// Sentry Request Handler
+Sentry.setupExpressErrorHandler(app);
 
 // Security
 app.use(helmet());
@@ -66,6 +72,7 @@ app.use("/api/v1/users", requireAuth, userRouter);
 app.use("/api/v1/users/me/goals", requireAuth, goalRouter);
 app.use("/api/v1/subscriptions", requireAuth, subscriptionRouter);
 app.use("/api/v1/integrations", requireAuth, integrationRouter);
+app.use("/api/v1/teams", requireAuth, teamRouter);
 
 // ── Health check ─────────────────────────────────────────
 app.get("/health", (_req, res) => {
@@ -73,6 +80,7 @@ app.get("/health", (_req, res) => {
 });
 
 // ── Global error handler ──────────────────────────────────
+app.use(Sentry.expressErrorHandler());
 app.use(errorHandler);
 
 // ── Start server ──────────────────────────────────────────

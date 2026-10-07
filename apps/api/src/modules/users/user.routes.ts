@@ -60,17 +60,44 @@ userRouter.patch(
             })
             .optional(),
           onboardedAt: z.string().datetime().optional(),
+          referredBy: z.string().uuid().optional(),
         })
         .parse(req.body);
 
-      const { onboardedAt, ...restBody } = body;
+      const { onboardedAt, referredBy, ...restBody } = body;
+      
+      const [currentUser] = await db.select({ referredBy: profiles.referredBy }).from(profiles).where(eq(profiles.id, req.userId!));
+
+      let newlyReferred = false;
+      let validReferredBy = undefined;
+      
+      if (referredBy && !currentUser?.referredBy && referredBy !== req.userId!) {
+        // Verify the referrer exists
+        const [referrer] = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.id, referredBy));
+        if (referrer) {
+          validReferredBy = referredBy;
+          newlyReferred = true;
+          // Award referrer 3 bonus queries
+          await db.update(profiles).set({
+            bonusQueries: sql`${profiles.bonusQueries} + 3`
+          }).where(eq(profiles.id, validReferredBy));
+        }
+      }
+
+      const updateData: any = {
+        ...restBody,
+        onboardedAt: onboardedAt ? new Date(onboardedAt) : undefined,
+        updatedAt: new Date(),
+      };
+
+      if (validReferredBy) {
+        updateData.referredBy = validReferredBy;
+        updateData.bonusQueries = sql`${profiles.bonusQueries} + 3`; // Award referee 3 bonus queries
+      }
+
       const [updated] = await db
         .update(profiles)
-        .set({ 
-          ...restBody, 
-          onboardedAt: onboardedAt ? new Date(onboardedAt) : undefined,
-          updatedAt: new Date() 
-        })
+        .set(updateData)
         .where(eq(profiles.id, req.userId!))
         .returning();
 
@@ -119,8 +146,10 @@ userRouter.get(
   rateLimit("user-usage", 60, 60),
   async (req: AuthedRequest, res, next) => {
     try {
+      const [profile] = await db.select({ tier: profiles.tier, bonusQueries: profiles.bonusQueries }).from(profiles).where(eq(profiles.id, req.userId!));
       const queriesUsedToday = await getDailyQueryCount(req.userId!);
-      const isFreeTier = req.userTier === "free";
+      const isFreeTier = profile?.tier === "free";
+      const bonus = profile?.bonusQueries || 0;
 
       const todayStr = new Date().toISOString().slice(0, 10);
       const todayStart = new Date(`${todayStr}T00:00:00.000Z`);
@@ -168,9 +197,9 @@ userRouter.get(
       res.json({
         tier: req.userTier,
         queriesUsedToday,
-        queriesLimit: isFreeTier ? 5 : null,
+        queriesLimit: isFreeTier ? 5 + bonus : null,
         queriesRemaining: isFreeTier
-          ? Math.max(0, 5 - queriesUsedToday)
+          ? Math.max(0, 5 + bonus - queriesUsedToday)
           : null,
         streak,
         todayCompleted,

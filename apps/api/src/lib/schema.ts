@@ -30,6 +30,8 @@ export const profiles = pgTable("profiles", {
     .notNull()
     .default("free")
     .$type<"free" | "pro" | "team" | "admin">(),
+  referredBy: uuid("referred_by"), // Self-reference added below due to circular dependency
+  bonusQueries: smallint("bonus_queries").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
@@ -70,6 +72,7 @@ export const goals = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
+    teamId: uuid("team_id").references(() => teams.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     description: text("description"),
     priority: smallint("priority").notNull().default(3),

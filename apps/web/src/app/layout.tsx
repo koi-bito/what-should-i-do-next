@@ -1,9 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 import { SkipToContent } from "@/components/ui/skip-to-content";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { PostHogProvider, PostHogPageView } from "@/components/providers/posthog-provider";
+import { ReferralTracker } from "@/components/providers/referral-tracker";
+import { OneSignalProvider } from "@/components/providers/onesignal-provider";
+import { Suspense } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,7 +15,12 @@ const inter = Inter({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#000000",
+};
+
 export const metadata: Metadata = {
+  manifest: "/manifest.json",
   title: {
     default: "What Should I Do Next?",
     template: "%s | What Should I Do Next?",
@@ -40,13 +49,38 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} dark`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                  }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <SkipToContent />
-        <ToastProvider>
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </ToastProvider>
+        <OneSignalProvider>
+          <PostHogProvider>
+            <Suspense fallback={null}>
+              <PostHogPageView />
+              <ReferralTracker />
+            </Suspense>
+            <ToastProvider>
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+            </ToastProvider>
+          </PostHogProvider>
+        </OneSignalProvider>
       </body>
     </html>
   );

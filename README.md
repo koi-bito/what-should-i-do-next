@@ -173,14 +173,14 @@ This starts both apps in parallel:
 |-------|--------|-------------|
 | **Phase 0** — Scaffolding | ✅ Done | Monorepo, CI, design tokens, Docker |
 | **Phase 1** — Core MVP | ✅ Done | Auth, onboarding, AI engine, CRUD, core flow |
-| **Phase 2** — UX Polish | 🔜 Next | Feedback UI, empty/error states, accessibility |
-| **Phase 3** — Monetization | ⬜ | Stripe live-mode, quota enforcement, billing UI |
-| **Phase 4** — Integrations | ⬜ | Google Calendar, Todoist sync |
-| **Phase 5** — Growth | ⬜ | Push notifications, daily digest, analytics |
-| **Phase 6** — Scale | ⬜ | Load testing, monitoring, cost optimization |
-| **Phase 7** — Mobile | ⬜ | PWA hardening, potential React Native |
-| **Phase 8** — Teams | ⬜ | Team goals, manager dashboard, per-seat billing |
-| **Phase 9** — AI v2 | ⬜ | Personalization, proactive nudges, A/B testing |
+| **Phase 2** — UX Polish | ✅ Done | Feedback UI, empty/error states, accessibility |
+| **Phase 3** — Monetization | ✅ Done | Stripe live-mode, quota enforcement, billing UI |
+| **Phase 4** — Integrations | ✅ Done | Google Calendar, Todoist sync |
+| **Phase 5** — Growth | ✅ Done | Push notifications, daily digest, analytics |
+| **Phase 6** — Scale | ✅ Done | Load testing, monitoring, cost optimization |
+| **Phase 7** — Mobile | ✅ Done | PWA hardening, potential React Native |
+| **Phase 8** — Teams | ✅ Done | Team goals, manager dashboard, per-seat billing |
+| **Phase 9** — AI v2 | ✅ Done | Personalization, proactive nudges, A/B testing |
 
 See [what-should-i-do-next-blueprint.md](./what-should-i-do-next-blueprint.md) for the complete product & engineering blueprint.
 

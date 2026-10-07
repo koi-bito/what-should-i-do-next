@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { posthog } from "../../lib/posthog";
 
 // ── OUTPUT SCHEMA ─────────────────────────────────────────
 
@@ -61,8 +62,9 @@ export interface GenerateResult {
 
 import { SYSTEM_PROMPT } from "./prompts/what-next-v1";
 const PROMPT_VERSION = "v1";
+const PROMPT_VERSION_V2 = "v2-direct";
 
-function buildUserPrompt(ctx: FullContext): string {
+function buildUserPrompt(ctx: FullContext, promptVersion: string): string {
   const goalsList = ctx.goals
     .map(
       (g) =>
@@ -93,6 +95,20 @@ function buildUserPrompt(ctx: FullContext): string {
         .map((e) => `- ${e.startTime}-${e.endTime}: ${e.title}`)
         .join("\n")
     : "(no calendar connected)";
+
+  if (promptVersion === PROMPT_VERSION_V2) {
+    return `[STRICT DIRECTIVE] Choose the NEXT BEST ACTION based on this state.
+Time: ${ctx.localTime}
+Energy: ${ctx.energyLevel}/5
+Goals:
+${goalsList}
+Tasks:
+${tasksList}
+Recent (DO NOT REPEAT):
+${recentList}
+
+Respond exactly according to schema.`;
+  }
 
   return `CURRENT CONTEXT
 - Local time: ${ctx.localTime} (${ctx.timezone})
@@ -194,7 +210,21 @@ async function callClaude(
 export async function generateNextAction(
   ctx: FullContext
 ): Promise<GenerateResult> {
-  const userPrompt = buildUserPrompt(ctx);
+  // A/B test prompt version via PostHog
+  let currentPromptVersion = PROMPT_VERSION;
+  try {
+    const isV2Enabled = await posthog.isFeatureEnabled(
+      "ai-prompt-v2",
+      ctx.userId
+    );
+    if (isV2Enabled) {
+      currentPromptVersion = PROMPT_VERSION_V2;
+    }
+  } catch (err) {
+    console.error("PostHog feature flag check failed:", err);
+  }
+
+  const userPrompt = buildUserPrompt(ctx, currentPromptVersion);
   const startMs = Date.now();
   let modelUsed = "rule-based-fallback";
   let output: AiOutput;
@@ -237,7 +267,7 @@ export async function generateNextAction(
   return {
     action: output!,
     meta: {
-      promptVersion: PROMPT_VERSION,
+      promptVersion: currentPromptVersion,
       modelUsed,
       latencyMs,
       costUsd,

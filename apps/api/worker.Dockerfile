@@ -1,21 +1,26 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine AS build
 WORKDIR /app
 
-FROM base AS deps
+# Copy root workspace files
 COPY package*.json ./
-RUN npm ci --omit=dev
+COPY turbo.json ./
+# Copy workspaces
+COPY apps/api ./apps/api
+COPY packages ./packages
 
-FROM base AS build
-COPY package*.json ./
+# Install and build
 RUN npm ci
-COPY . .
-RUN npm run build
+RUN npx turbo run build --filter=api
 
-FROM base AS runner
+FROM node:20-alpine AS runner
+WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY package.json ./
+
+# Copy node_modules and built dist
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=build /app/apps/api/dist ./dist
+COPY --from=build /app/apps/api/package.json ./
 
 USER node
 CMD ["node", "dist/worker/worker.js"]

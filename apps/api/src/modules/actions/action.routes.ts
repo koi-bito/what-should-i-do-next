@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { rateLimit } from "../../middleware/rate-limit";
+import { rateLimit, enforceDailyQueryQuota } from "../../middleware/rate-limit";
 import { db } from "../../lib/db";
-import { actions, feedback, queries } from "../../lib/schema";
+import { actions, feedback, queries, tasks } from "../../lib/schema";
 import { eq } from "drizzle-orm";
 import { buildUserContext } from "../queries/context-builder";
 import { generateNextAction } from "../ai/ai-engine";
@@ -53,6 +53,7 @@ actionRouter.patch(
 actionRouter.patch(
   "/:id/reject",
   rateLimit("action-respond", 60, 60),
+  enforceDailyQueryQuota,
   async (req: AuthedRequest, res, next) => {
     try {
       const action = await getOwnedAction(req.params.id, req.userId!);
@@ -157,6 +158,10 @@ actionRouter.patch(
         .where(eq(actions.id, req.params.id))
         .returning();
 
+      if (updated.taskId) {
+        await db.update(tasks).set({ status: "snoozed" }).where(eq(tasks.id, updated.taskId));
+      }
+
       res.json({ action: updated });
     } catch (err) {
       next(err);
@@ -183,6 +188,10 @@ actionRouter.patch(
         .set({ status: "completed", resolvedAt: new Date() })
         .where(eq(actions.id, req.params.id))
         .returning();
+
+      if (updated.taskId) {
+        await db.update(tasks).set({ status: "done" }).where(eq(tasks.id, updated.taskId));
+      }
 
       res.json({ action: updated });
     } catch (err) {

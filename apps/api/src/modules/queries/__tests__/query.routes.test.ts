@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import request from "supertest";
+import jwt from "jsonwebtoken";
 import { app } from "../../../server";
 
 // Mock the AI engine so tests don't call the real Claude API
@@ -22,35 +23,49 @@ vi.mock("../../ai/ai-engine", () => ({
 }));
 
 // Mock the database to avoid requiring a real Postgres connection
-vi.mock("../../../lib/db", () => ({
-  db: {
-    insert: vi.fn().mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        returning: vi.fn().mockResolvedValue([
-          {
-            id: "query-id-1",
-            userId: "user-id-1",
-            promptVersion: "v1",
-            modelUsed: "claude-sonnet-mock",
-            latencyMs: 5,
-            costUsd: "0.0001",
-            createdAt: new Date(),
-          },
-        ]),
-      }),
-    }),
-    select: vi.fn().mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([]),
-          }),
-          limit: vi.fn().mockResolvedValue([]),
+vi.mock("../../../lib/db", () => {
+  const chain = {
+    orderBy: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    then: function (resolve: any) {
+      // Resolve with fake data for both query fetches and profile fetches
+      resolve([{
+        id: "query-id-1",
+        userId: "user-id-1",
+        promptVersion: "v1",
+        modelUsed: "claude-sonnet-mock",
+        latencyMs: 5,
+        costUsd: "0.0001",
+        createdAt: new Date(),
+        tier: "pro" // For the requireAuth mock
+      }]);
+    }
+  };
+  return {
+    db: {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([
+            {
+              id: "query-id-1",
+              userId: "user-id-1",
+              promptVersion: "v1",
+              modelUsed: "claude-sonnet-mock",
+              latencyMs: 5,
+              costUsd: "0.0001",
+              createdAt: new Date(),
+            },
+          ]),
         }),
       }),
-    }),
-  },
-}));
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue(chain),
+        }),
+      }),
+    },
+  };
+});
 
 // Mock context builder
 vi.mock("../context-builder", () => ({
@@ -76,14 +91,24 @@ vi.mock("../../../lib/redis", () => ({
   redisConnection: {},
 }));
 
-// Generate a test JWT (unsigned — works with dev mode requireAuth)
+const TEST_SECRET = "test-secret-1234567890-test-secret-1234567890";
+
+// Generate a test JWT signed with test secret
 function makeTestToken(userId = "user-id-1", tier = "free") {
-  const payload = { sub: userId, user_metadata: { tier } };
-  const encoded = Buffer.from(JSON.stringify(payload)).toString("base64");
-  return `${encoded}.${encoded}.${encoded}`; // fake JWT format, decoded not verified
+  return jwt.sign({ sub: userId, email: "test@example.com" }, TEST_SECRET, { expiresIn: "1h" });
 }
 
 describe("POST /api/v1/queries", () => {
+  let prevSecret: string | undefined;
+
+  beforeAll(() => {
+    prevSecret = process.env.SUPABASE_JWT_SECRET;
+    process.env.SUPABASE_JWT_SECRET = TEST_SECRET;
+  });
+
+  afterAll(() => {
+    process.env.SUPABASE_JWT_SECRET = prevSecret;
+  });
   it("returns 201 with a suggested action", async () => {
     const res = await request(app)
       .post("/api/v1/queries")

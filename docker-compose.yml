@@ -29,8 +29,8 @@ services:
 
   api:
     build:
-      context: ./apps/api
-      dockerfile: api.Dockerfile
+      context: .
+      dockerfile: apps/api/api.Dockerfile
     env_file: .env.local
     environment:
       DATABASE_URL: postgres://whatnext:localdevpassword@postgres:5432/whatnext
@@ -48,8 +48,8 @@ services:
 
   worker:
     build:
-      context: ./apps/api
-      dockerfile: worker.Dockerfile
+      context: .
+      dockerfile: apps/api/worker.Dockerfile
     env_file: .env.local
     environment:
       DATABASE_URL: postgres://whatnext:localdevpassword@postgres:5432/whatnext

@@ -78,10 +78,6 @@ export default function PricingPage() {
             <ul className="space-y-3 text-sm flex-1 mb-8">
               {[
                 "Unlimited queries",
-                "Google Calendar sync",
-                "Todoist / Notion import",
-                "Daily digest email",
-                "Pattern learning (personalization)",
                 "Priority support",
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2 text-foreground">
@@ -90,38 +86,10 @@ export default function PricingPage() {
               ))}
             </ul>
             <Link href="/signup" className="btn-primary w-full text-center py-3 text-sm block shadow-glow-primary">
-              Start free trial
+              Upgrade to Pro
             </Link>
           </div>
 
-          {/* Team */}
-          <div className="card p-8 flex flex-col">
-            <div className="mb-6">
-              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Team</p>
-              <p className="text-4xl font-bold text-foreground">$15<span className="text-base font-normal text-muted-foreground">/user/mo</span></p>
-              <p className="text-sm text-muted-foreground mt-1">Minimum 2 seats</p>
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              Alignment without another status meeting.
-            </p>
-            <ul className="space-y-3 text-sm flex-1 mb-8">
-              {[
-                "Everything in Pro, per seat",
-                "Shared goals across team",
-                "Manager dashboard",
-                "Member priority visibility",
-                "Centralized billing",
-                "Dedicated onboarding",
-              ].map((f) => (
-                <li key={f} className="flex items-center gap-2 text-muted-foreground">
-                  <span className="text-success">✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/signup" className="btn-secondary w-full text-center py-3 text-sm block">
-              Contact sales
-            </Link>
-          </div>
         </div>
 
         {/* FAQ */}
@@ -132,7 +100,6 @@ export default function PricingPage() {
               { q: "Do I need a credit card to sign up?", a: "No. The free tier is free forever, no card required." },
               { q: "How does the AI decide what to suggest?", a: "We look at your goals, open tasks, energy level, available time, and recent history — then Claude picks the single best next action, with a reasoning explanation." },
               { q: "What happens when I hit my 5 queries/day limit?", a: "You'll see an upgrade prompt. Your data and history are preserved — nothing resets." },
-              { q: "Can I connect my existing task apps?", a: "Yes — Google Calendar and Todoist/Notion sync is available on Pro. We read your data to provide better suggestions; we never write to your external apps." },
               { q: "How do I delete my account and data?", a: "One click in Settings → Danger Zone. All your data is permanently deleted immediately." },
             ].map((faq) => (
               <div key={faq.q} className="card p-5">

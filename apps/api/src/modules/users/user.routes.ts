@@ -2,12 +2,18 @@ import { Router } from "express";
 import { z } from "zod";
 import { rateLimit } from "../../middleware/rate-limit";
 import { db } from "../../lib/db";
-import { profiles } from "../../lib/schema";
-import { eq } from "drizzle-orm";
+import { profiles, actions, queries, subscriptions } from "../../lib/schema";
+import { eq, and, gte, sql } from "drizzle-orm";
+import { supabaseAdmin } from "../../lib/supabase-admin";
+import Stripe from "stripe";
 import { getDailyQueryCount } from "../../middleware/rate-limit";
 import type { AuthedRequest } from "../../middleware/require-auth";
 
 export const userRouter = Router();
+
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : null;
 
 // GET /users/me
 userRouter.get(
@@ -81,6 +87,23 @@ userRouter.delete(
   rateLimit("user-delete", 5, 60),
   async (req: AuthedRequest, res, next) => {
     try {
+      if (stripe) {
+        const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, req.userId!));
+        if (sub?.stripeSubscriptionId) {
+          try {
+            await stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+          } catch (e) {
+            // log error but continue
+          }
+        }
+      }
+
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(req.userId!);
+      } catch (e) {
+        // continue
+      }
+
       await db.delete(profiles).where(eq(profiles.id, req.userId!));
       res.clearCookie("refresh_token");
       res.json({ ok: true, message: "Account and all data deleted" });
@@ -99,6 +122,49 @@ userRouter.get(
       const queriesUsedToday = await getDailyQueryCount(req.userId!);
       const isFreeTier = req.userTier === "free";
 
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStart = new Date(`${todayStr}T00:00:00.000Z`);
+
+      const [actionResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(actions)
+        .innerJoin(queries, eq(actions.queryId, queries.id))
+        .where(
+          and(
+            eq(queries.userId, req.userId!),
+            eq(actions.status, "completed"),
+            gte(actions.resolvedAt, todayStart)
+          )
+        );
+      const todayCompleted = Number(actionResult?.count || 0);
+
+      const dates = await db.execute(sql`
+        SELECT DISTINCT DATE(created_at) as d
+        FROM ${queries}
+        WHERE user_id = ${req.userId!}
+        ORDER BY d DESC
+        LIMIT 100
+      `);
+      
+      const rows = Array.isArray(dates) ? dates : (dates as any).rows || [];
+      let streak = 0;
+      let currentCheck = new Date(todayStr);
+
+      for (const row of rows) {
+        const rowDateStr = row.d instanceof Date ? row.d.toISOString().slice(0, 10) : String(row.d).slice(0, 10);
+        const checkStr = currentCheck.toISOString().slice(0, 10);
+        
+        if (rowDateStr === checkStr) {
+          streak++;
+          currentCheck.setDate(currentCheck.getDate() - 1);
+        } else if (streak === 0 && rowDateStr === new Date(currentCheck.getTime() - 86400000).toISOString().slice(0, 10)) {
+          streak++;
+          currentCheck.setDate(currentCheck.getDate() - 2);
+        } else {
+          break;
+        }
+      }
+
       res.json({
         tier: req.userTier,
         queriesUsedToday,
@@ -106,8 +172,8 @@ userRouter.get(
         queriesRemaining: isFreeTier
           ? Math.max(0, 5 - queriesUsedToday)
           : null,
-        streak: 0, // TODO: compute from query history
-        todayCompleted: 0, // TODO: compute from actions
+        streak,
+        todayCompleted,
       });
     } catch (err) {
       next(err);

@@ -7,6 +7,10 @@ export interface AuthedRequest extends Request {
   userTier?: "free" | "pro" | "team" | "admin";
 }
 
+import { db } from "../lib/db";
+import { profiles } from "../lib/schema";
+import { eq } from "drizzle-orm";
+
 interface JwtPayload {
   sub: string;
   email?: string;
@@ -16,11 +20,11 @@ interface JwtPayload {
   exp?: number;
 }
 
-export function requireAuth(
+export async function requireAuth(
   req: AuthedRequest,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const header = req.headers.authorization;
 
   if (!header?.startsWith("Bearer ")) {
@@ -31,10 +35,21 @@ export function requireAuth(
   }
 
   const token = header.slice("Bearer ".length);
+  const secret = process.env.SUPABASE_JWT_SECRET;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      res.status(500).json({
+        error: { code: "INTERNAL_SERVER_ERROR", message: "Auth not configured" },
+      });
+      return;
+    }
+  }
+
+  let decodedSub: string;
+  let decodedEmail: string | undefined;
 
   try {
-    const secret = process.env.SUPABASE_JWT_SECRET;
-
     if (!secret) {
       // Dev mode without Supabase: decode without verification
       const decoded = jwt.decode(token) as JwtPayload | null;
@@ -44,22 +59,33 @@ export function requireAuth(
         });
         return;
       }
-      req.userId = decoded.sub;
-      req.userEmail = decoded.email;
-      req.userTier = decoded.user_metadata?.tier ?? "free";
-      next();
-      return;
+      decodedSub = decoded.sub;
+      decodedEmail = decoded.email;
+    } else {
+      const payload = jwt.verify(token, secret) as JwtPayload;
+      decodedSub = payload.sub;
+      decodedEmail = payload.email;
     }
-
-    const payload = jwt.verify(token, secret) as JwtPayload;
-    req.userId = payload.sub;
-    req.userEmail = payload.email;
-    req.userTier = payload.user_metadata?.tier ?? "free";
-    next();
-  } catch {
+  } catch (err) {
     res.status(401).json({
       error: { code: "INVALID_TOKEN", message: "Token invalid or expired" },
     });
+    return;
+  }
+
+  try {
+    req.userId = decodedSub;
+    req.userEmail = decodedEmail;
+
+    const [profile] = await db
+      .select({ tier: profiles.tier })
+      .from(profiles)
+      .where(eq(profiles.id, decodedSub));
+
+    req.userTier = profile?.tier ?? "free";
+    next();
+  } catch (err) {
+    next(err);
   }
 }
 

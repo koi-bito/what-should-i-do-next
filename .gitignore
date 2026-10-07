@@ -47,3 +47,6 @@ drizzle/meta/
 
 # Vercel
 .vercel/
+
+# Private notes (never push)
+private-notes/

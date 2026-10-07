@@ -1,7 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import * as fs from "fs";
-import * as path from "path";
 
 // ── OUTPUT SCHEMA ─────────────────────────────────────────
 
@@ -61,10 +59,7 @@ export interface GenerateResult {
 
 // ── PROMPT BUILDER ────────────────────────────────────────
 
-const SYSTEM_PROMPT = fs.readFileSync(
-  path.join(__dirname, "prompts/what-next-v1.txt"),
-  "utf-8"
-);
+import { SYSTEM_PROMPT } from "./prompts/what-next-v1";
 const PROMPT_VERSION = "v1";
 
 function buildUserPrompt(ctx: FullContext): string {

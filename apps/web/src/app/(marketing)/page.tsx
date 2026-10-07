@@ -211,51 +211,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social proof */}
-      <section className="py-24 px-6 border-t border-border">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground text-center mb-12">
-            Who it's for
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                name: "Priya N.",
-                role: "CS Student",
-                quote: "I had 90 minutes and low energy. It told me to read chapter 4. That's it. That's exactly what I needed.",
-                avatar: "🎓",
-              },
-              {
-                name: "Marcus C.",
-                role: "Solo Founder",
-                quote: "Every morning before I check Slack, I ask what to do next. It knows about my investor call and still picked the right thing.",
-                avatar: "🚀",
-              },
-              {
-                name: "Devon W.",
-                role: "Product Manager",
-                quote: "I had 10 minutes between meetings. It told me to reply to the design thread. Two people were unblocked. Done.",
-                avatar: "💼",
-              },
-            ].map((person) => (
-              <div key={person.name} className="card p-6 hover:border-primary/20 transition-colors">
-                <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">
-                  "{person.quote}"
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center text-xl">
-                    {person.avatar}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{person.name}</p>
-                    <p className="text-xs text-muted-foreground">{person.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Pricing teaser */}
       <section className="py-24 px-6 border-t border-border">
@@ -287,12 +242,10 @@ export default function LandingPage() {
               <p className="text-sm text-muted-foreground mb-6">For when stuck happens more than 5x/day</p>
               <ul className="space-y-2 text-sm text-muted-foreground mb-6">
                 <li className="flex gap-2">✓ Unlimited queries</li>
-                <li className="flex gap-2">✓ Google Calendar + Todoist sync</li>
-                <li className="flex gap-2">✓ Daily digest email</li>
                 <li className="flex gap-2">✓ Priority support</li>
               </ul>
               <Link href="/signup" className="btn-primary w-full text-center block py-2.5 text-sm">
-                Start free trial
+                Upgrade to Pro
               </Link>
             </div>
           </div>

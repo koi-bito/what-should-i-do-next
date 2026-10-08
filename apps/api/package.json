@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "eval": "ts-node scripts/offline-eval.ts",
     "db:migrate": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "clean": "rm -rf dist"

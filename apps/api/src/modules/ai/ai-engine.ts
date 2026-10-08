@@ -64,7 +64,7 @@ import { SYSTEM_PROMPT } from "./prompts/what-next-v1";
 const PROMPT_VERSION = "v1";
 const PROMPT_VERSION_V2 = "v2-direct";
 
-function buildUserPrompt(ctx: FullContext, promptVersion: string): string {
+export function buildUserPrompt(ctx: FullContext, promptVersion: string): string {
   const goalsList = ctx.goals
     .map(
       (g) =>
@@ -133,7 +133,7 @@ Choose the single next action now.`;
 
 // ── RULE-BASED FALLBACK ───────────────────────────────────
 
-function ruleBasedFallback(ctx: FullContext): AiOutput {
+export function ruleBasedFallback(ctx: FullContext): AiOutput {
   // Find the task closest to due date that fits the time budget
   const fitTasks = ctx.tasks.filter(
     (t) =>
@@ -176,7 +176,7 @@ const client = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
-async function callClaude(
+export async function callClaude(
   userPrompt: string,
   model: string,
   retryNote?: string

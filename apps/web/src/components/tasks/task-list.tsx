@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api/client";
 import type { Task } from "@/types/api";
 import { TaskEditorModal } from "./task-editor-modal";
+import { BrainDumpModal } from "./brain-dump-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ApiErrorState } from "@/components/ui/api-error-state";
 import { SkeletonList } from "@/components/ui/skeleton";
@@ -14,6 +15,7 @@ export function TaskList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null | undefined>(undefined);
+  const [isBrainDumpOpen, setIsBrainDumpOpen] = useState(false);
   const [completingId, setCompletingId] = useState<string | null>(null);
   const { success, error: showError } = useToast();
 
@@ -70,14 +72,23 @@ export function TaskList() {
         <p className="text-sm text-muted-foreground">
           {tasks.length} open task{tasks.length !== 1 ? "s" : ""}
         </p>
-        <button
-          id="add-task-btn"
-          onClick={() => setEditingTask(null)}
-          className="btn-primary text-sm py-2 px-4"
-          aria-label="Add a new task"
-        >
-          + Add task
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsBrainDumpOpen(true)}
+            className="btn-ghost text-sm py-2 px-4"
+            aria-label="Paste a brain dump"
+          >
+            🧠 Brain Dump
+          </button>
+          <button
+            id="add-task-btn"
+            onClick={() => setEditingTask(null)}
+            className="btn-primary text-sm py-2 px-4"
+            aria-label="Add a new task"
+          >
+            + Add task
+          </button>
+        </div>
       </div>
 
       {tasks.length === 0 ? (
@@ -181,6 +192,17 @@ export function TaskList() {
             );
             setEditingTask(undefined);
             success(isNew ? `Task "${saved.title}" created` : `Task updated`);
+          }}
+        />
+      )}
+
+      {isBrainDumpOpen && (
+        <BrainDumpModal
+          onClose={() => setIsBrainDumpOpen(false)}
+          onSuccess={(newTasks) => {
+            setTasks((prev) => [...newTasks, ...prev]);
+            setIsBrainDumpOpen(false);
+            success(`Extracted and added ${newTasks.length} task${newTasks.length !== 1 ? 's' : ''}!`);
           }}
         />
       )}

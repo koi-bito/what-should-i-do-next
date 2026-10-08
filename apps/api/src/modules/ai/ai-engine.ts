@@ -274,3 +274,58 @@ export async function generateNextAction(
     },
   };
 }
+
+// ── BRAIN DUMP PARSER ─────────────────────────────────────
+
+const brainDumpSchema = z.object({
+  tasks: z.array(
+    z.object({
+      title: z.string(),
+      notes: z.string().optional(),
+      estimatedMinutes: z.number().int().positive().nullable().optional(),
+      dueAt: z.string().datetime().nullable().optional(),
+    })
+  )
+});
+
+export type BrainDumpOutput = z.infer<typeof brainDumpSchema>;
+
+export async function parseBrainDump(rawText: string, timezone: string): Promise<BrainDumpOutput> {
+  if (!client) {
+    throw new Error("No Anthropic API key configured");
+  }
+
+  const prompt = `You are a helpful assistant that extracts tasks from a user's messy brain dump.
+The user is in the timezone: ${timezone}. Current time: ${new Date().toISOString()}.
+Extract each actionable task you can find. Try to infer an estimated duration in minutes if implied.
+If a deadline is implied (e.g. "by tomorrow", "this friday"), infer an ISO8601 datetime for it.
+Respond ONLY with a JSON object matching this schema, with no other text:
+{
+  "tasks": [
+    {
+      "title": "string",
+      "notes": "string (optional context)",
+      "estimatedMinutes": number (optional),
+      "dueAt": "ISO8601 string (optional)"
+    }
+  ]
+}
+
+Here is the brain dump:
+"""
+${rawText}
+"""
+`;
+
+  const response = await client.messages.create({
+    model: "claude-haiku-4-5",
+    max_tokens: 1024,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const contentText = response.content[0]?.type === "text" ? response.content[0].text : "";
+  const jsonMatch = contentText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("No JSON found in response");
+
+  return brainDumpSchema.parse(JSON.parse(jsonMatch[0]));
+}

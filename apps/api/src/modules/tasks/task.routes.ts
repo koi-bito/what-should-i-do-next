@@ -2,8 +2,9 @@ import { Router } from "express";
 import { z } from "zod";
 import { rateLimit } from "../../middleware/rate-limit";
 import { db } from "../../lib/db";
-import { tasks } from "../../lib/schema";
+import { tasks, profiles } from "../../lib/schema";
 import { eq, and } from "drizzle-orm";
+import { parseBrainDump } from "../ai/ai-engine";
 import type { AuthedRequest } from "../../middleware/require-auth";
 
 export const taskRouter = Router();
@@ -62,6 +63,53 @@ taskRouter.post(
         .returning();
 
       res.status(201).json(task);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// POST /tasks/brain-dump
+taskRouter.post(
+  "/brain-dump",
+  rateLimit("tasks-braindump", 10, 60),
+  async (req: AuthedRequest, res, next) => {
+    try {
+      const body = z
+        .object({
+          text: z.string().min(5).max(5000),
+        })
+        .parse(req.body);
+
+      const [profile] = await db
+        .select({ timezone: profiles.timezone })
+        .from(profiles)
+        .where(eq(profiles.id, req.userId!));
+      
+      const timezone = profile?.timezone || "UTC";
+
+      const parsed = await parseBrainDump(body.text, timezone);
+
+      if (!parsed.tasks.length) {
+        res.status(200).json({ data: [] });
+        return;
+      }
+
+      const inserted = await db
+        .insert(tasks)
+        .values(
+          parsed.tasks.map((t) => ({
+            userId: req.userId!,
+            title: t.title,
+            notes: t.notes,
+            estimatedMinutes: t.estimatedMinutes || undefined,
+            dueAt: t.dueAt ? new Date(t.dueAt) : undefined,
+            source: "native" as const,
+          }))
+        )
+        .returning();
+
+      res.status(201).json({ data: inserted });
     } catch (err) {
       next(err);
     }

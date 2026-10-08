@@ -1,6 +1,6 @@
 import { db } from "../../lib/db";
 import { goals, tasks, actions, feedback, queries, profiles } from "../../lib/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gte } from "drizzle-orm";
 import type { FullContext } from "../ai/ai-engine";
 
 interface ManualContext {
@@ -44,7 +44,7 @@ export async function buildUserContext(
   manual: ManualContext
 ): Promise<FullContext> {
   // Load everything in parallel
-  const [activeGoals, openTasks, recentActions, profileResult] = await Promise.all([
+  const [activeGoals, openTasks, recentActions, profileResult, recentRejectedActions] = await Promise.all([
     db
       .select()
       .from(goals)
@@ -74,14 +74,36 @@ export async function buildUserContext(
       .from(profiles)
       .where(eq(profiles.id, userId))
       .limit(1),
+      
+    db
+      .select({ taskId: actions.taskId })
+      .from(actions)
+      .innerJoin(queries, eq(actions.queryId, queries.id))
+      .where(
+        and(
+          eq(queries.userId, userId),
+          eq(actions.status, "rejected"),
+          // @ts-ignore - drizzle orm types might complain about Date vs string if not careful, but new Date() is standard here
+          gte(actions.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000))
+        )
+      )
+      .limit(20),
   ]);
+
+  const excludedTaskIds = new Set(
+    (recentRejectedActions as { taskId: string | null }[])
+      .map(a => a.taskId)
+      .filter(Boolean)
+  );
+
+  const filteredOpenTasks = openTasks.filter(t => !excludedTaskIds.has(t.id));
 
   // Map goals for fast lookup
   const goalMap = new Map(activeGoals.map((g) => [g.id, g]));
 
   // Trim tasks to context budget
   const { included, overflowCount } = trimTasksToBudget(
-    openTasks.map((t) => ({
+    filteredOpenTasks.map((t) => ({
       id: t.id,
       title: t.title,
       estimatedMinutes: t.estimatedMinutes,

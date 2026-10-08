@@ -85,6 +85,12 @@ app.use(errorHandler);
 
 // ── Start server ──────────────────────────────────────────
 if (require.main === module) {
+  if (process.env.NODE_ENV === "production" && !process.env.SUPABASE_JWT_SECRET) {
+    // eslint-disable-next-line no-console
+    console.error("FATAL: SUPABASE_JWT_SECRET is missing in production. Auth would fail open. Exiting.");
+    process.exit(1);
+  }
+  
   const port = Number(process.env.PORT ?? 8080);
   app.listen(port, () => {
     // eslint-disable-next-line no-console

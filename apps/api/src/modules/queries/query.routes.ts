@@ -5,7 +5,7 @@ import { buildUserContext } from "./context-builder";
 import { generateNextAction } from "../ai/ai-engine";
 import { db } from "../../lib/db";
 import { queries, actions, contexts } from "../../lib/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, lt } from "drizzle-orm";
 import type { AuthedRequest } from "../../middleware/require-auth";
 
 export const queryRouter = Router();
@@ -78,16 +78,33 @@ queryRouter.get(
   async (req: AuthedRequest, res, next) => {
     try {
       const limit = Math.min(Number(req.query.limit) || 20, 100);
+      const cursor = req.query.cursor as string | undefined;
 
-      const rows = await db
-        .select()
+      let whereClause = eq(queries.userId, req.userId!);
+      if (cursor) {
+        // @ts-ignore
+        whereClause = and(whereClause, lt(queries.createdAt, new Date(cursor)));
+      }
+
+      const rawRows = await db
+        .select({
+          query: queries,
+          action: actions,
+        })
         .from(queries)
-        .where(eq(queries.userId, req.userId!))
+        .leftJoin(actions, eq(queries.id, actions.queryId))
+        .where(whereClause)
         .orderBy(desc(queries.createdAt))
         .limit(limit + 1);
 
-      const hasMore = rows.length > limit;
-      const data = hasMore ? rows.slice(0, limit) : rows;
+      const hasMore = rawRows.length > limit;
+      const dataRows = hasMore ? rawRows.slice(0, limit) : rawRows;
+      
+      const data = dataRows.map(row => ({
+        ...row.query,
+        action: row.action,
+      }));
+
       const nextCursor = hasMore
         ? data[data.length - 1]?.createdAt?.toISOString()
         : null;

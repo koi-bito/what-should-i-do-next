@@ -51,6 +51,12 @@ export async function requireAuth(
 
   try {
     if (!secret) {
+      if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
+        res.status(500).json({
+          error: { code: "INTERNAL_SERVER_ERROR", message: "Auth not configured" },
+        });
+        return;
+      }
       // Dev mode without Supabase: decode without verification
       const decoded = jwt.decode(token) as JwtPayload | null;
       if (!decoded?.sub) {
@@ -77,10 +83,33 @@ export async function requireAuth(
     req.userId = decodedSub;
     req.userEmail = decodedEmail;
 
-    const [profile] = await db
+    let [profile] = await db
       .select({ tier: profiles.tier })
       .from(profiles)
       .where(eq(profiles.id, decodedSub));
+
+    if (!profile) {
+      try {
+        const [newProfile] = await db
+          .insert(profiles)
+          .values({ 
+            id: decodedSub, 
+            email: decodedEmail ?? `user-${decodedSub}@placeholder.local`, 
+            tier: "free" 
+          })
+          .onConflictDoNothing({ target: profiles.id })
+          .returning({ tier: profiles.tier });
+        
+        profile = newProfile;
+        if (!profile) {
+          const [existing] = await db.select({ tier: profiles.tier }).from(profiles).where(eq(profiles.id, decodedSub));
+          profile = existing;
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to auto-create profile in requireAuth:", err);
+      }
+    }
 
     req.userTier = profile?.tier ?? "free";
     next();

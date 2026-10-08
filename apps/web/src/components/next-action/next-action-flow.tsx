@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ContextInput } from "./context-input";
 import { NextActionCard } from "./next-action-card";
+import { ActiveActionCard } from "./active-action-card";
 import { apiClient } from "@/lib/api/client";
 import { useToast } from "@/components/ui/toast";
 import type { Action, ContextPayload } from "@/types/api";
@@ -58,15 +59,32 @@ export function NextActionFlow() {
       if (kind === "reject" && data.action) {
         setAction(data.action);
       } else {
-        setAction(null); // Accept/snooze — back to context input
         if (kind === "accept") {
+          setAction({ ...action, status: "accepted" });
           success("Action accepted — go get it done! 💪");
         } else if (kind === "snooze") {
+          setAction(null);
           success("Snoozed — we'll bring it back later");
         }
       }
     } catch (err: any) {
       showError(err.message ?? "Something went wrong.");
+    } finally {
+      setIsResponding(false);
+    }
+  }
+
+  async function handleComplete() {
+    if (!action) return;
+    setIsResponding(true);
+    try {
+      await apiClient.patch(`/actions/${action.id}/complete`);
+      setAction(null);
+      success("Awesome job! Task completed.");
+      // Trigger a re-fetch of stats if needed (e.g. usage query)
+      window.dispatchEvent(new Event("action-completed"));
+    } catch (err: any) {
+      showError(err.message ?? "Failed to complete action.");
     } finally {
       setIsResponding(false);
     }
@@ -109,6 +127,17 @@ export function NextActionFlow() {
       <ContextInput
         isSubmitting={isLoading}
         onSubmit={handleSubmitContext}
+      />
+    );
+  }
+
+  if (action.status === "accepted") {
+    return (
+      <ActiveActionCard
+        action={action}
+        isCompleting={isResponding}
+        onComplete={handleComplete}
+        onCancel={() => setAction(null)}
       />
     );
   }

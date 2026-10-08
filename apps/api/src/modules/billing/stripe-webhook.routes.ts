@@ -119,6 +119,8 @@ stripeWebhookRouter.post(
       }
     } catch (err) {
       console.error("[stripe-webhook] handler error:", err);
+      res.status(500).json({ error: "Webhook handler failed" });
+      return;
     }
 
     res.json({ received: true });

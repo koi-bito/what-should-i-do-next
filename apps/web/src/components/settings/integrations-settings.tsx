@@ -8,9 +8,9 @@ import { ApiErrorState } from "@/components/ui/api-error-state";
 import { useToast } from "@/components/ui/toast";
 
 const PROVIDERS = [
-  { id: "google_calendar", name: "Google Calendar", icon: "📅", desc: "Auto-detect your free time and upcoming deadlines" },
-  { id: "todoist", name: "Todoist", icon: "✅", desc: "Import your Todoist tasks automatically" },
-  { id: "notion", name: "Notion", icon: "📝", desc: "Sync a Notion database as your task list" },
+  { id: "google_calendar", name: "Google Calendar", icon: "📅", desc: "Auto-detect your free time and upcoming deadlines", comingSoon: true },
+  { id: "todoist", name: "Todoist", icon: "✅", desc: "Import your Todoist tasks automatically", comingSoon: true },
+  { id: "notion", name: "Notion", icon: "📝", desc: "Sync a Notion database as your task list", comingSoon: true },
 ];
 
 export function IntegrationsSettings() {
@@ -100,10 +100,10 @@ export function IntegrationsSettings() {
                 id={`connect-${p.id}-btn`}
                 onClick={() => handleConnect(p.id)}
                 className="btn-secondary text-xs py-1.5 px-3 flex-shrink-0"
-                disabled={connecting === p.id}
+                disabled={p.comingSoon || connecting === p.id}
                 aria-label={`Connect ${p.name}`}
               >
-                {connecting === p.id ? (
+                {p.comingSoon ? "Coming Soon" : connecting === p.id ? (
                   <span className="flex items-center gap-1.5">
                     <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

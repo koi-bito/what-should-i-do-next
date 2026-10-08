@@ -25,7 +25,7 @@ export default async function BillingPage() {
           <span className="text-muted-foreground">/month</span>
         </div>
         <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-          {["Unlimited queries", "Google Calendar sync", "Todoist/Notion import", "Daily digest email", "Priority support"].map((f) => (
+          {["Unlimited queries", "Priority support"].map((f) => (
             <li key={f} className="flex gap-2"><span className="text-success">✓</span>{f}</li>
           ))}
         </ul>

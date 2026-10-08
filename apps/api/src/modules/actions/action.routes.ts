@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { rateLimit, enforceDailyQueryQuota } from "../../middleware/rate-limit";
 import { db } from "../../lib/db";
-import { actions, feedback, queries, tasks } from "../../lib/schema";
+import { actions, feedback, queries, tasks, contexts } from "../../lib/schema";
 import { eq } from "drizzle-orm";
 import { buildUserContext } from "../queries/context-builder";
 import { generateNextAction } from "../ai/ai-engine";
@@ -95,16 +95,29 @@ actionRouter.patch(
       }
 
       // Generate a fresh replacement using the same last context
-      // We just need to check the query exists to verify validity
-      await db
-        .select({ id: queries.id })
+      const [query] = await db
+        .select({ contextId: queries.contextId })
         .from(queries)
         .where(eq(queries.id, action.queryId));
 
+      let energyLevel = 3;
+      let minutesAvailable = 30;
+
+      if (query?.contextId) {
+        const [context] = await db
+          .select()
+          .from(contexts)
+          .where(eq(contexts.id, query.contextId));
+        if (context) {
+          energyLevel = context.energyLevel ?? 3;
+          minutesAvailable = context.minutesAvailable ?? 30;
+        }
+      }
+
       // Re-build context and generate new action
       const fullContext = await buildUserContext(req.userId!, {
-        energyLevel: 3, // fallback defaults
-        minutesAvailable: 30,
+        energyLevel,
+        minutesAvailable,
       });
 
       const { action: newAction, meta } = await generateNextAction(fullContext);

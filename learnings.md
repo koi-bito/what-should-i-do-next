@@ -4,22 +4,22 @@ A place to document technical discoveries, architecture decisions, and project m
 
 ---
 
-## Phase 1: Scaffolding & Core Architecture (Sep 28, 2026)
+## Session 1: Scaffolding & Core Architecture
 
 - **TurboRepo Configuration**: In Turbo 2.0+, the `pipeline` key in `turbo.json` is deprecated and must be renamed to `tasks`.
 - **Node Environments**: When using workspaces, `npm run dev` might throw a minor `ENOWORKSPACES` warning when spawning child processes, but it does not interrupt execution.
-- **Express Auth**: Ensure `cookie-parser` is explicitly installed and mounted before any auth middleware runs, otherwise read, this is missing and will crash `createClient`. Passing `global: { WebSocket }` to the client config works for the core client, but **fails for `@supabase/realtime-js`** (which throws a missing WebSocket error). The true fix is to polyfill it globally before client creation: `if (typeof globalThis.WebSocket === "undefined") { globalThis.WebSocket = require("ws") as any; }`.
+- **Express Auth**: Ensure `cookie-parser` is explicitly installed and mounted before any auth middleware runs, otherwise reading secure cookies (like Supabase tokens) will silently fail.
 - **Supabase SSR Auth Guarding**: Using `@supabase/ssr` requires careful cookie management. `createServerClient` in `server.ts` must safely handle both reading and writing cookies (in route handlers) and gracefully ignore writes when called in a pure Server Component context.
 - **AI Fallback Tiering**: The AI engine uses a resilient 3-tier cascade (`Claude Sonnet` -> `Claude Haiku` -> `Rule-based fallback`) rather than relying on a single model. This guarantees the user _always_ gets an action, even if the primary LLM API goes down or latency spikes.
-- **Context Builder Logic**: Fetching user stateing secure cookies (like Supabase tokens) will silently fail.
+- **Context Builder Logic**: Fetching user state (Goals, Tasks, recent Actions) concurrently with `Promise.all` is critical for AI latency. By mapping goals to tasks manually in Node (`goalMap.get(t.goalId)`), we avoid complex SQL joins while keeping the database load light. Timezone resolution must dynamically fall back to UTC to avoid crashing `toLocaleTimeString` if a user provides an invalid timezone string.
 - **Git Hygiene**: Always initialize Git before writing significant code, and don't forget to use `git pull origin main --allow-unrelated-histories` if you create the remote repository _after_ generating your local codebase.
 - **drizzle-kit v0.21 Breaking Change**: `driver: "pg"` → `dialect: "postgresql"` and `dbCredentials.connectionString` → `dbCredentials.url`. Always pin drizzle-kit and drizzle-orm to matching versions to avoid silent config schema drift.
-- **Supabase JS on Node < 22**: `@supabase/supabase-js` v2 requires a native WebSocket implementation. In Node 20 (common in CI) (Goals, Tasks, recent Actions) concurrently with `Promise.all` is critical for AI latency. By mapping goals to tasks manually in Node (`goalMap.get(t.goalId)`), we avoid complex SQL joins while keeping the database load light. Timezone resolution must dynamically fall back to UTC to avoid crashing `toLocaleTimeString` if a user provides an invalid timezone string.
+- **Supabase JS on Node < 22**: `@supabase/supabase-js` v2 requires a native WebSocket implementation. In Node 20 (common in CI), this is missing. Passing `global: { WebSocket }` to the client config works for the core client, but **fails for `@supabase/realtime-js`** (which throws a missing WebSocket error). The true fix is to polyfill it globally before client creation: `if (typeof globalThis.WebSocket === "undefined") { globalThis.WebSocket = require("ws") as any; }`.
 - **Monorepo Boundary Integrity**: By isolating database schemas into `apps/api/src/lib/schema.ts` and keeping `@whatnext/types` strictly for shared API contracts, the Next.js frontend remains completely decoupled from Drizzle ORM. The frontend acts exclusively as a client to the Express API.
 
 ---
 
-## Phase 2: UX Polish & Product Refinement (Sep 29 – Oct 2, 2026)
+## Session 2: UX Polish & Product Refinement
 
 - **Inline Feedback UX**: To maintain flow, feedback on rejected items (e.g. "Why did you reject this?") should happen inline in the card before fetching a replacement, rather than bouncing the user to a new page or a blocking modal. This micro-interaction dramatically increases the likelihood of users actually providing the reason tag.
 - **Toast Architecture — Context + Portal Pattern**: A `ToastProvider` wrapping the entire app via `layout.tsx` gives every component access to `useToast()` without prop-drilling. Key design decisions: (1) cap the visible stack at 5 toasts to avoid overwhelming the user, (2) position at `bottom-right` on desktop but `bottom-20` on mobile to clear the tab bar, (3) use `pointer-events-none` on the container with `pointer-events-auto` on each toast so the rest of the UI remains clickable, (4) each variant (`success`/`error`/`warning`/`info`) has a distinct duration — errors stay longer (5s) because the user may need to read them.
@@ -36,8 +36,19 @@ A place to document technical discoveries, architecture decisions, and project m
 
 ---
 
-## Phase 3: Monetization & Infrastructure (Oct 2, 2026)
+## Session 3: Monetization & Infrastructure
 
 - **Stripe Webhook Verification**: Stripe's `constructEvent` requires the raw, unparsed request body. If using Express, you must apply `express.raw({ type: "application/json" })` strictly on the webhook route *before* any global `express.json()` middleware parses it into an object, otherwise signature validation will fail.
 - **Next.js Server Components for Billing**: Fetching live subscription and usage data is safely done via Server Components (like `BillingPage`) making direct calls to the Express API with the forwarded Supabase access token. This avoids client-side loading spinners for critical billing state.
 - **Redis for Quota Enforcement**: Using Redis for free-tier limits (`qcount:userId:date`) allows fast, synchronous blocking of the AI engine before spending tokens. The Next.js frontend gracefully catches the `429 DAILY_QUOTA_EXCEEDED` error to surface an inline upgrade prompt instead of a generic failure.
+
+---
+
+## Session 4: Security, Auditing & Validation
+
+- **Production Boot Safety (`fs.readFileSync` vs Strings)**: Reading files like prompts at runtime via `fs.readFileSync(path.join(__dirname, '...'))` breaks inside Docker if the build step (e.g., `tsc`) doesn't explicitly copy non-TS assets into the `dist/` directory. The easiest and safest fix is to export the prompt directly as a native TypeScript template literal string (`export const SYSTEM_PROMPT = \`...\``).
+- **Quota Loopholes & Context Loss**: When a user rejects a suggestion, generating a replacement is a *new* AI query and must be rate-limited (`enforceDailyQueryQuota`). Furthermore, if the replacement doesn't retrieve the user's exact `energyLevel` and `minutesAvailable` from the original query (via the `contexts` join), it defaults to a hardcoded state, leading to bad AI recommendations that burn free tier quota unnecessarily. Fetching the exact `contextId` ensures continuity.
+- **Marketing Copy Honesty**: Never sell features that aren't shipped (e.g. Google Calendar sync, Todoist imports). False "free trial" mentions and unbuilt Pro tiers severely damage trust and can incur Stripe chargebacks. It is critical to scrub the frontend UI, pricing page, and settings panel to accurately reflect exactly what works in production (e.g., "Unlimited queries" and "Priority support").
+- **Offline Evaluation (Golden Set Testing)**: You cannot rely on blind faith that a more expensive LLM is better than a `due_at` SQL sort for this product. By creating an offline evaluation script (`scripts/offline-eval.ts`), we can pump an array of static mock user states ("golden set" contexts) through the rule-based fallback, Claude Haiku, and Claude Sonnet in parallel, outputting a Markdown table. This allows us to definitively blind-rate the AI performance before scaling up API spend.
+- **NPM Audit Mitigation**: The JS ecosystem frequently flags deep dependencies for critical vulnerabilities (e.g. Next.js cache poisoning, Drizzle ORM SQL injections). `npm audit fix` handles minor bumps, but you must manually review major version bumps. We explicitly bumped Next.js to the latest minor `14.2.35` and `drizzle-orm` to `0.45.4` to fix these. When `npm install` hangs on Windows because of interactive prompts or heavy progress bars, `npm install --no-audit --no-progress` can resolve the stall.
+- **LLM Cold-Start Solution (Brain Dump)**: Asking decision-fatigued users to fill out complex forms for tasks is an anti-pattern. Providing a single multi-line textarea ("Brain Dump") and piping that raw text through `claude-haiku-4-5` to parse a structured JSON array of tasks completely removes the CRUD friction and solves the day-one empty state problem.

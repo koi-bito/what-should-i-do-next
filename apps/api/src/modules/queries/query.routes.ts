@@ -80,11 +80,9 @@ queryRouter.get(
       const limit = Math.min(Number(req.query.limit) || 20, 100);
       const cursor = req.query.cursor as string | undefined;
 
-      let whereClause = eq(queries.userId, req.userId!);
-      if (cursor) {
-        // @ts-expect-error - date string comparison is valid here
-        whereClause = and(whereClause, lt(queries.createdAt, new Date(cursor)));
-      }
+      const whereClause = cursor
+        ? and(eq(queries.userId, req.userId!), lt(queries.createdAt, new Date(cursor)))
+        : eq(queries.userId, req.userId!);
 
       const rawRows = await db
         .select({

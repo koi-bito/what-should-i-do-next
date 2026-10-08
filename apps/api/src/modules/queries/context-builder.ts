@@ -83,7 +83,6 @@ export async function buildUserContext(
         and(
           eq(queries.userId, userId),
           eq(actions.status, "rejected"),
-          // @ts-expect-error - drizzle orm types might complain about Date vs string if not careful, but new Date() is standard here
           gte(actions.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000))
         )
       )

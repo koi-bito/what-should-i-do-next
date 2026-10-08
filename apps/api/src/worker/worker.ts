@@ -5,8 +5,8 @@ import { syncIntegration } from "./jobs/sync-integration";
 import { checkBudgetAlerts } from "./jobs/budget-alerts";
 import { sendProactiveNudges } from "./jobs/proactive-nudge";
 import { db } from "../lib/db";
-import { integrations, profiles } from "../lib/schema";
-import { eq } from "drizzle-orm";
+import { integrations, profiles, tasks } from "../lib/schema";
+import { eq, and, lt } from "drizzle-orm";
 
 export const digestQueue = new Queue("daily-digest", {
   connection: redisConnection,
@@ -36,6 +36,11 @@ export const syncQueue = new Queue("integration-sync", {
     removeOnComplete: 50,
     removeOnFail: 100,
   },
+});
+
+export const unsnoozeQueue = new Queue("unsnooze-tasks", {
+  connection: redisConnection,
+  defaultJobOptions: { attempts: 1 },
 });
 
 // Process daily digests
@@ -96,6 +101,23 @@ new Worker(
   { connection: redisConnection, concurrency: 5 }
 );
 
+// Process unsnooze
+new Worker(
+  "unsnooze-tasks",
+  async () => {
+    const result = await db.update(tasks)
+      .set({ status: "open" })
+      .where(
+        and(
+          eq(tasks.status, "snoozed"),
+          lt(tasks.updatedAt, new Date(Date.now() - 24 * 60 * 60 * 1000))
+        )
+      );
+    console.log(`[worker] Unsnoozed tasks older than 24h`);
+  },
+  { connection: redisConnection, concurrency: 1 }
+);
+
 // Schedule: enqueue digest fan-out at 6am UTC daily
 digestQueue.add(
   "fan-out",
@@ -133,6 +155,16 @@ syncQueue.add(
   {
     repeat: { pattern: "*/15 * * * *" },
     jobId: "integration-sync-fan-out",
+  }
+);
+
+// Schedule: enqueue unsnooze hourly
+unsnoozeQueue.add(
+  "hourly-unsnooze",
+  {},
+  {
+    repeat: { pattern: "0 * * * *" },
+    jobId: "hourly-unsnooze-tasks",
   }
 );
 

@@ -95,8 +95,9 @@ actionRouter.patch(
       }
 
       // Generate a fresh replacement using the same last context
-      const [_lastQuery] = await db
-        .select()
+      // We just need to check the query exists to verify validity
+      await db
+        .select({ id: queries.id })
         .from(queries)
         .where(eq(queries.id, action.queryId));
 

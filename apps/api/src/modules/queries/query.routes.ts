@@ -82,7 +82,7 @@ queryRouter.get(
 
       let whereClause = eq(queries.userId, req.userId!);
       if (cursor) {
-        // @ts-ignore
+        // @ts-expect-error - date string comparison is valid here
         whereClause = and(whereClause, lt(queries.createdAt, new Date(cursor)));
       }
 

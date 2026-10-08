@@ -105,7 +105,7 @@ new Worker(
 new Worker(
   "unsnooze-tasks",
   async () => {
-    const result = await db.update(tasks)
+    await db.update(tasks)
       .set({ status: "open" })
       .where(
         and(
